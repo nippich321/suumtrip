@@ -1,0 +1,4 @@
+dist/
+tools/raw/
+__pycache__/
+.claude/

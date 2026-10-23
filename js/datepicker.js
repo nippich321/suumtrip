@@ -31,7 +31,10 @@ export function mountDatePicker(el, { value, min, priceFor, onChange }) {
     viewStart = new Date(chosen.getFullYear(), chosen.getMonth(), 1);
   }
   if (monthKey(viewStart) < monthKey(first)) viewStart = first;
-
+  // the cheapest price of a normal week is marked as the deal; dearer days stay grey
+  const week = [0, 1, 2, 3, 4, 5, 6].map((i) => priceFor(iso(addDays(minDate, i))));
+  const low = Math.min(...week);
+  const high = Math.max(...week);
 
   function month(start) {
     const back = iso(addDays(parse(value), 1));
@@ -43,12 +46,13 @@ export function mountDatePicker(el, { value, min, priceFor, onChange }) {
       const date = new Date(start.getFullYear(), start.getMonth(), d);
       const key = iso(date);
       const off = date < minDate;
-      const cls = key === value ? ' on' : key === back ? ' back' : '';
+      const p = priceFor(key);
+      const cls = (key === value ? ' on' : key === back ? ' back' : '') + (p <= low ? ' deal' : '');
       const label = date.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
       cells += off
         ? `<span class="dp-cell dp-day off" aria-disabled="true">${d}</span>`
         : `<button type="button" class="dp-cell dp-day${cls}" data-day="${key}" aria-pressed="${key === value}"
-             aria-label="${label} ราคา ${fmtPrice(priceFor(key))} บาท"><b>${d}</b><small>${fmtPrice(priceFor(key))}</small></button>`;
+             aria-label="${label} ราคา ${fmtPrice(p)} บาท"><b>${d}</b><small>${p}</small></button>`;
     }
     return `<div class="dp-month"><div class="dp-title">${title}</div>
       <div class="dp-grid">${DOW.map((w) => `<span class="dp-dow">${w}</span>`).join('')}${cells}</div></div>`;
@@ -66,7 +70,8 @@ export function mountDatePicker(el, { value, min, priceFor, onChange }) {
           <button type="button" class="dp-arrow" data-move="1" aria-label="เดือนถัดไป" ${canNext ? '' : 'disabled'}><i class="ti ti-chevron-right"></i></button>
         </div>
         <div class="dp-months">${shown.map(month).join('')}</div>
-        <p class="dp-note"><span class="dp-key on"></span> วันไป <span class="dp-key back"></span> วันกลับ · ตัวเลขใต้วันที่คือราคากล่อง (บาท / 2 คน)</p>
+        <p class="dp-note"><span><span class="dp-key on"></span>วันไป</span><span><span class="dp-key back"></span>วันกลับ</span>
+          <span class="dp-legend"><span class="deal">${fmtPrice(low)}</span>${high > low ? ` · <span>${fmtPrice(high)}</span>` : ''} บาท / 2 คน</span></p>
       </div>`;
     el.querySelectorAll('[data-move]').forEach((b) => (b.onclick = () => {
       viewStart = new Date(viewStart.getFullYear(), viewStart.getMonth() + Number(b.dataset.move), 1);

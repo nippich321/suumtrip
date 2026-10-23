@@ -614,7 +614,7 @@ function renderGift() {
 // ---------- router ----------
 function go(name) { location.hash = name; }
 function route() {
-  const name = location.hash.slice(1) || 'home';
+  const name = location.hash.slice(1) || 'choose';
   if (name !== 'trip') { tripMap?.destroy(); tripMap = null; planner?.destroy(); planner = null; }
   (screens[name] || screens.home)();
   window.scrollTo(0, 0);

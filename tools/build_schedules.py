@@ -6,7 +6,9 @@ Reads  tools/raw/schedules_srt.json (trains, from tools/fetch_schedules.py) and
 Writes docs/schedules.csv   - the check sheet. A person opens each source, checks the time and
                               writes ใช่ in "ยืนยันแล้ว" plus their name and the date. Ticks are
                               kept when this script runs again (rows are matched by "รหัส").
-       data/schedules.json  - what the site reads: only rows ticked ใช่, plus, per destination,
+       data/schedules.json  - what the site reads: trains from the railway's own lookup (owner's
+                              decision 2026-10-23: the official timetable is used as fetched,
+                              labelled with its date) and van/bus rows ticked ใช่, plus, per destination,
                               how many rows still wait for a check, and, where the train station
                               is far from the destination, the road legs of that transfer.
 """
@@ -31,7 +33,8 @@ BACK_WINDOW = ("12:30", "20:00")   # leave the destination in the afternoon of d
 
 STATION_NAME = {"1000": "สถานีกลางกรุงเทพอภิวัฒน์", "1001": "สถานีกรุงเทพ (หัวลำโพง)", "1031": "สถานีอยุธยา",
                 "2093": "สถานีปากช่อง", "3023": "สถานีชุมทางฉะเชิงเทรา", "4101": "สถานีเพชรบุรี",
-                "4118": "สถานีหัวหิน", "4002": "สถานีธนบุรี"}
+                "4118": "สถานีหัวหิน", "4002": "สถานีธนบุรี", "4057": "สถานีกาญจนบุรี", "4016": "สถานีนครปฐม",
+                "4089": "สถานีราชบุรี", "4111": "สถานีชะอำ", "3041": "สถานีพัทยา"}
 TRANSFER_KM = 3  # a station farther than this (straight line) from the destination needs a ride
 DIR_TH = {"out": "ไป", "back": "กลับ"}
 DAYS_TH = {"all": "ทุกวัน", "weekday": "จ-ศ", "weekend": "ส-อา"}
@@ -94,6 +97,7 @@ def key(r):
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")
     old = {}
     if SHEET.exists():
         with SHEET.open(encoding="utf-8-sig") as f:
@@ -102,13 +106,17 @@ def main():
     for r in rows():
         k = key(r)
         was = old.get(k, {})
-        ok = was.get("ยืนยันแล้ว (ใช่/ไม่)", "").strip() == "ใช่"
+        # a person's tick; a tick written by an AI agent ("Agent A/B") does not count
+        ticked = (was.get("ยืนยันแล้ว (ใช่/ไม่)", "").strip() == "ใช่"
+                  and not was.get("ผู้ยืนยัน", "").strip().lower().startswith("agent"))
+        ok = ticked or r["mode"] == "train"  # the railway's own timetable counts as checked
         sheet.append([k, r["dest"], DIR_TH[r["dir"]], MODE_TH[r["mode"]], r["operator"], r["board"], r["alight"],
                       r["depart"], r["arrive"], r["last"], r["every_min"], DAYS_TH[r["days"]], r["note"], r["source"],
                       was.get("ยืนยันแล้ว (ใช่/ไม่)", ""), was.get("ผู้ยืนยัน", ""), was.get("วันที่ยืนยัน", "")])
         if ok and r["depart"]:
             item = {x: r[x] for x in ("mode", "operator", "board", "alight", "depart", "arrive", "last", "days", "source")}
             item["every"] = int(r["every_min"]) if r["every_min"] else None
+            item["checked"] = "railway" if r["mode"] == "train" else "person"
             confirmed.setdefault(r["dest"], {"out": [], "back": []})[r["dir"]].append(item)
         else:
             pending[r["dest"]] = pending.get(r["dest"], 0) + 1

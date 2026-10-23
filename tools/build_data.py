@@ -43,14 +43,30 @@ DESTS = {
                    center=(101.070, 13.690), terminal="สถานีขนส่งเอกมัย"),
     "ayutthaya": dict(name="เกาะเมืองอยุธยา", province="พระนครศรีอยุธยา", cat="old", gold=True, rack=4500,
                       center=(100.568, 14.355), terminal="สถานีขนส่งหมอชิต 2"),
+    # Train destinations added 2026-10-23 (owner: trains first). The centre is the station, where
+    # a train trip starts, except Pattaya (the station is 3-4 km inland; the trip adds the ride).
+    # rack is the usual price for comparison, illustrative like the others.
+    "kanchanaburi": dict(name="กาญจนบุรี", province="กาญจนบุรี", cat="nat", gold=False, rack=1900,
+                         center=(99.525611, 14.034206), terminal="สถานีขนส่งสายใต้ (ตลิ่งชัน)"),
+    "nakhonpathom": dict(name="องค์พระปฐมเจดีย์", province="นครปฐม", cat="old", gold=False, rack=1600,
+                         center=(100.058270, 13.824290), terminal="สถานีขนส่งสายใต้ (ตลิ่งชัน)"),
+    "ratchaburi": dict(name="เมืองราชบุรี", province="ราชบุรี", cat="old", gold=False, rack=1600,
+                       center=(99.824061, 13.529865), terminal="สถานีขนส่งสายใต้ (ตลิ่งชัน)"),
+    "phetchaburi": dict(name="เมืองเพชร เขาวัง", province="เพชรบุรี", cat="old", gold=False, rack=1700,
+                        center=(99.941500, 13.115894), terminal="สถานีขนส่งสายใต้ (ตลิ่งชัน)"),
+    "chaam": dict(name="ชะอำ", province="เพชรบุรี", cat="sea", gold=False, rack=2000,
+                  center=(99.966243, 12.799827), terminal="สถานีขนส่งสายใต้ (ตลิ่งชัน)"),
+    "pattaya": dict(name="พัทยา", province="ชลบุรี", cat="sea", gold=False, rack=2200,
+                    center=(100.880, 12.935), terminal="สถานีขนส่งเอกมัย"),
 }
 
 # Slot plan for a 2-day, 1-night trip. kinds are matched against classify().
 SLOTS = [
+    # straight to the hotel on arrival to leave the bags (owner's request), whatever the time
+    dict(id="hotel", day=1, time="arrive", label="ฝากกระเป๋า/เช็กอินที่พัก", kinds=["stay"]),
     dict(id="d1a", day=1, time="10:30", label="ช่วงเช้า", kinds=["cafe"]),
     dict(id="d1b", day=1, time="12:00", label="มื้อกลางวัน", kinds=["food"]),
     dict(id="d1c", day=1, time="13:30", label="ช่วงบ่าย", kinds=["sight", "market", "temple", "waterfall", "park"]),
-    dict(id="hotel", day=1, time="15:30", label="เช็กอินที่พัก", kinds=["stay"]),
     dict(id="d1d", day=1, time="sunset", label="ชมพระอาทิตย์ตก", kinds=["beach", "view", "park", "temple", "sight"], ranked=True),
     dict(id="d1e", day=1, time="19:00", label="มื้อเย็น", kinds=["food"]),
     dict(id="d2a", day=2, time="sunrise", label="เช้าตรู่", kinds=["view", "beach", "temple", "market", "park"], ranked=True),
@@ -398,7 +414,7 @@ def build(dest_id, meta):
             prefer = breakfast_like if s["id"] == "d2b" else None
             # every option must be within reach of each place the traveller comes from or goes to next
             neighbours = list(prev)
-            if s["id"] in ("d1c", "d1e", "d2a"):  # check-in and the night are at the hotel
+            if s["id"] in ("d1a", "d1e", "d2a"):  # the day starts, ends and restarts at the hotel
                 neighbours += hotel_pts
             if i == len(SLOTS) - 1:  # then back to the town centre
                 neighbours.append(center)
@@ -449,7 +465,8 @@ def build(dest_id, meta):
 
     def sequence():
         """Option lists between which legs are needed, in the order js/itinerary.js walks them:
-        the night is at the hotel, and day 2 starts there (the lists are the slots' own)."""
+        the hotel first, the night at the hotel, day 2 from there, and back to the hotel for the
+        bags before the station (the lists are the slots' own)."""
         seq, day = [["ARRIVE"]], 1
         for s in slots:
             if s["day"] == 2 and day == 1:
@@ -457,6 +474,8 @@ def build(dest_id, meta):
                     seq.append(hotel_opts)
                 day = 2
             seq.append(s["options"])
+        if seq[-1] is not hotel_opts:  # pick up the bags at the hotel before going home
+            seq.append(hotel_opts)
         seq.append(["ARRIVE"])
         return seq
 

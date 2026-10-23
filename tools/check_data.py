@@ -26,6 +26,8 @@ def time_problems(d):
     """List of human-readable problems with places that do not fit their slot."""
     pois, out = d["pois"], []
     for s in d["slots"]:
+        if s["id"] == "hotel":  # the hotel has no clock time (straight there on arrival)
+            continue
         hhmm = SUN_TIMES.get(s["time"], s["time"])
         evening = to_min(hhmm) >= 17 * 60
         meal = s["id"] != "hotel" and any(k in MEAL_KINDS for k in s["kinds"])

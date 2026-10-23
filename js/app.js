@@ -94,6 +94,13 @@ function candidates() {
   }));
 }
 
+// How a public-transport trip gets there: by train when the timetable has trains
+function rideTag(id) {
+  const runs = SCHED?.confirmed?.[id];
+  const train = runs && [...runs.out, ...runs.back].some((r) => r.mode === 'train');
+  return train ? ' · <span class="ride train"><i class="ti ti-train"></i> รถไฟ</span>' : ' · <span class="ride"><i class="ti ti-bus"></i> รถตู้</span>';
+}
+
 function drawDestination() {
   const c = candidates().filter((d) => !d.vetoed);
   let r = Math.random() * c.reduce((s, d) => s + d.odds, 0);
@@ -242,7 +249,7 @@ const screens = {
         <div class="cand ${d.gold ? 'gold' : ''} ${d.vetoed ? 'vetoed' : ''}">
           <div class="ic"><i class="ti ${d.gold ? 'ti-crown' : CATEGORIES[d.cat].icon}"></i></div>
           <div><div class="nm">${esc(d.name)}${d.gold ? '<span class="tag-gold">ทองคำ</span>' : ''}</div>
-            <div class="pv">${esc(d.province)}${d.gold ? ' · ที่พักระดับพรีเมียม' : ''}</div></div>
+            <div class="pv">${esc(d.province)}${d.gold ? ' · ที่พักระดับพรีเมียม' : ''}${S.transport === 'pub' ? rideTag(d.id) : ''}</div></div>
           <div class="odds">${d.odds}%<small>โอกาสออก</small></div>
           ${d.gold ? '' : `<button class="veto" data-veto="${d.id}">${d.vetoed ? 'เอาคืน' : 'ตัดทิ้ง'}</button>`}
         </div>`).join('')}
@@ -447,9 +454,9 @@ function timelineHtml(t) {
       html += `<div class="stop" data-i="${i}"><div class="tm">${fmtTime(it.time)}</div><div class="dot"><i class="ti ${kindIcon(it.poi.kind)}"></i></div>
         <div><div class="what">${esc(it.slot.label)} · ${kindLabel(it.poi.kind)}${sun}</div><div class="nm">${esc(it.poi.name)}</div>${it.poi.nameEn ? `<div class="sub">${esc(it.poi.nameEn)}</div>` : ''}</div></div>`;
     } else {
-      const icon = { start: 'ti-home', arrive: 'ti-flag', night: 'ti-moon', depart: 'ti-bus', end: 'ti-home-heart', rest: restIcon(it.rest?.kind) }[it.type];
+      const icon = { start: 'ti-home', arrive: 'ti-flag', night: 'ti-moon', depart: 'ti-bus', end: 'ti-home-heart', rest: restIcon(it.rest?.kind), bags: 'ti-luggage' }[it.type];
       html += `<div class="stop" data-i="${i}"><div class="tm">${fmtTime(it.time)}</div><div class="dot"><i class="ti ${icon}"></i></div>
-        <div><div class="nm">${esc(it.name)}</div>${it.sub ? `<div class="sub">${esc(it.sub)}</div>` : ''}${it.warn ? `<div class="warn"><i class="ti ti-clock-exclamation"></i> ${esc(it.warn)}</div>` : ''}</div></div>`;
+        <div><div class="nm">${esc(it.name)}</div>${it.sub ? `<div class="sub">${esc(it.sub)}</div>` : ''}${it.src ? `<div class="src"><i class="ti ti-info-circle"></i> ${esc(it.src)}</div>` : ''}${it.warn ? `<div class="warn"><i class="ti ti-clock-exclamation"></i> ${esc(it.warn)}</div>` : ''}</div></div>`;
     }
   });
   return html;

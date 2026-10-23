@@ -1,5 +1,6 @@
 // Turns one destination's data into a concrete 2-day trip: one place per
 // slot, real clock times, and the travel legs between every stop.
+import { REST_MIN } from './drive.js';
 
 const KIND_ICON = {
   cafe: 'ti-coffee', food: 'ti-tools-kitchen-2', stay: 'ti-bed', view: 'ti-mountain',
@@ -97,9 +98,11 @@ function pickFrom(runs, want, before, lead) {
 
 export function buildTrip(dest, opts) {
   // transfer: the road legs between a far-away train station and the destination
-  const { transport, date, schedule, transfer } = opts;
+  // chosen: keep these places (re-planning the same trip); drive: the self-drive plan from
+  // js/drive.js ({ depart, out, back }, each cut into timed pieces at the rest stops)
+  const { transport, date, schedule, transfer, drive } = opts;
   const chosen = {};
-  for (const s of dest.slots) chosen[s.id] = pick(s.options);
+  for (const s of dest.slots) chosen[s.id] = opts.chosen?.[s.id] ?? pick(s.options);
   const day1 = new Date(date);
   const day2 = new Date(day1.getTime() + 86400000);
   const sun1 = sunTimes(day1, dest.center[1], dest.center[0]);
@@ -113,7 +116,7 @@ export function buildTrip(dest, opts) {
     if (!leg) return start;
     const vehicle = legVehicle(leg, transport, isLong);
     const slow = isLong && transport !== 'self' ? 1.3 : vehicle === 'walk' ? 1 : 1.15;
-    const sec = run?.dur != null ? run.dur * 60 : leg.sec * slow + (isLong && transport !== 'self' ? 20 * 60 : 0);
+    const sec = run?.dur != null ? run.dur * 60 : leg.exact ? leg.sec : leg.sec * slow + (isLong && transport !== 'self' ? 20 * 60 : 0);
     const geom = reverse ? [...leg.geom].reverse() : leg.geom;
     const mode = (run && MODE[run.row.mode]) || tag;
     items.push({ type: 'leg', from, to, vehicle, sec, m: leg.m, cost: legCost(vehicle, leg.m),
@@ -121,6 +124,19 @@ export function buildTrip(dest, opts) {
     return start + sec / 60;
   };
   const longLeg = dest.legs['ORIGIN>ARRIVE'];
+  // a planned drive: its pieces with a rest stop between each two
+  const pushDrive = (plan, from, to, start, day) => {
+    let t = start;
+    plan.segments.forEach((seg, i) => {
+      const last = i === plan.segments.length - 1;
+      t = pushLeg(i ? `REST${day}.${i}` : from, last ? to : `REST${day}.${i + 1}`, seg, t, true, false);
+      if (last) return;
+      const stop = plan.stops[i];
+      items.push({ type: 'rest', day, time: t, name: `แวะพัก ${stop.name}`, sub: `พัก ${REST_MIN} นาที`, rest: stop });
+      t += REST_MIN;
+    });
+    return t;
+  };
   const pub = transport !== 'self';
   const outRuns = pub ? departures(schedule?.out, date) : [];
   const backRuns = pub ? departures(schedule?.back, date) : [];
@@ -143,11 +159,13 @@ export function buildTrip(dest, opts) {
   const soonest = outRuns.length ? outRuns.reduce((a, b) => (b.dep + lead(b) < a.dep + lead(a) ? b : a)) : null;
   const outRun = pickRun(outRuns, firstAt - 30, true, lead) || soonest;
   if (outRun) clock = outRun.dep;
+  if (!pub && drive) clock = drive.depart;
   items.push({ type: 'start', day, time: clock, name: 'ออกเดินทางจากกรุงเทพฯ',
     sub: !pub ? 'ขับรถออกจากบ้าน' : outRun ? runSub(outRun, 'ขึ้นที่') : `ขึ้นรถตู้ที่${dest.terminal}`,
     warn: pub && !outRun ? WAIT : null });
   const outVia = station(outRun);
-  clock = pushLeg('ORIGIN', 'ARRIVE', outVia ? outVia.fromBangkok : longLeg, clock, true, false, outRun);
+  clock = !pub && drive ? pushDrive(drive.out, 'ORIGIN', 'ARRIVE', clock, 1)
+    : pushLeg('ORIGIN', 'ARRIVE', outVia ? outVia.fromBangkok : longLeg, clock, true, false, outRun);
   if (outVia) {
     const km = (outVia.toTown.m / 1000).toFixed(1);
     items.push({ type: 'arrive', day, time: clock, name: `ถึง${outVia.station}`, sub: `ต่อสองแถว/แท็กซี่ไป${dest.name} ~${km} กม.` });
@@ -197,7 +215,8 @@ export function buildTrip(dest, opts) {
     name: !pub ? 'ขับรถกลับกรุงเทพฯ' : backRun ? `ขึ้น${MODE[backRun.row.mode].label}กลับกรุงเทพฯ` : `ขึ้นรถตู้กลับ${dest.terminal.replace('สถานีขนส่ง', 'ขนส่ง')}`,
     sub: backRun ? `${runSub(backRun, 'ที่')} · ถึง ${backRun.row.alight}` : dest.name,
     warn: pub && !backRun ? (backRuns.length ? 'ไม่มีรอบกลับที่ยืนยันแล้วหลังเวลานี้ ต้องเช็กรอบรถกับทีมงาน' : WAIT) : null });
-  clock = pushLeg('ARRIVE', 'ORIGIN', backVia ? backVia.fromBangkok : longLeg, clock, true, true, backRun);
+  clock = !pub && drive ? pushDrive(drive.back, 'ARRIVE', 'ORIGIN', clock, 2)
+    : pushLeg('ARRIVE', 'ORIGIN', backVia ? backVia.fromBangkok : longLeg, clock, true, true, backRun);
   items.push({ type: 'end', day: 2, time: clock, name: 'ถึงกรุงเทพฯ จบทริป', sub: 'กลับบ้านพร้อมแบตเต็ม' });
 
   const travelCost = items.filter((i) => i.type === 'leg').reduce((s, l) => s + l.cost, 0);

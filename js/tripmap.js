@@ -2,6 +2,7 @@
 // every real route, walking or riding depending on the leg.
 import { createTravelerLayer } from './traveler3d.js';
 import { kindIcon, VEHICLE } from './itinerary.js';
+import { restIcon } from './drive.js';
 
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const VEHICLE_COLOR = { walk: '#10a39a', car: '#ff6b4a', grab: '#00b14f', songthaew: '#2e6bd6', van: '#7a5af8' };
@@ -39,7 +40,8 @@ const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export function createTripMap(container, trip, { onStep } = {}) {
-  const { dest, items } = trip;
+  const { dest } = trip;
+  let { items } = trip;
   const map = new maplibregl.Map({
     container, style: STYLE, center: dest.center, zoom: 12.5, pitch: 58, bearing: -20,
     attributionControl: { compact: true }, maxPitch: 75,
@@ -53,8 +55,25 @@ export function createTripMap(container, trip, { onStep } = {}) {
 
   const pins = [];
   let travelerAt = null;
-  const legs = items.map((it, i) => ({ it, i })).filter((x) => x.it.type === 'leg');
+  let legs = items.map((it, i) => ({ it, i })).filter((x) => x.it.type === 'leg');
   const stops = items.map((it, i) => ({ it, i })).filter((x) => x.it.type === 'stop');
+  let restMarkers = [];
+  let fuelMarkers = [];
+  const routeData = () => ({ type: 'FeatureCollection', features: legs.map(({ it }) => ({
+    type: 'Feature', properties: { v: it.vehicle, long: it.isLong ? 1 : 0, color: VEHICLE_COLOR[it.vehicle] },
+    geometry: { type: 'LineString', coordinates: it.geom },
+  })) });
+  // small markers for the rest stops of a planned drive
+  function drawRests() {
+    for (const m of restMarkers) m.remove();
+    restMarkers = items.filter((it) => it.type === 'rest').map((it) => {
+      const el = document.createElement('div');
+      el.className = 'rest-pin';
+      el.innerHTML = `<i class="ti ${restIcon(it.rest.kind)}"></i>`;
+      el.title = it.rest.name;
+      return new maplibregl.Marker({ element: el }).setLngLat([it.rest.lon, it.rest.lat]).addTo(map);
+    });
+  }
 
   map.on('load', () => {
     // 3D buildings if the style does not already extrude them
@@ -65,11 +84,8 @@ export function createTripMap(container, trip, { onStep } = {}) {
         paint: { 'fill-extrusion-color': '#e9dfd6', 'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6], 'fill-extrusion-opacity': 0.85 },
       });
     }
-    const feats = legs.map(({ it }) => ({
-      type: 'Feature', properties: { v: it.vehicle, long: it.isLong ? 1 : 0, color: VEHICLE_COLOR[it.vehicle] },
-      geometry: { type: 'LineString', coordinates: it.geom },
-    }));
-    map.addSource('route', { type: 'geojson', data: { type: 'FeatureCollection', features: feats } });
+    map.addSource('route', { type: 'geojson', data: routeData() });
+    drawRests();
     map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: { 'line-color': '#ffffff', 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 4, 15, 9] } });
     const width = ['interpolate', ['linear'], ['zoom'], 8, 2, 15, 5];
@@ -163,6 +179,11 @@ export function createTripMap(container, trip, { onStep } = {}) {
         place({ lngLat: [it.poi.lon, it.poi.lat], vehicle: 'walk', visible: true, size: 1.8 });
         map.easeTo({ center: [it.poi.lon, it.poi.lat], zoom: 16.4, pitch: 64, duration: 700 });
         await sleep(1300);
+      } else if (it.type === 'rest') {
+        // and stretch their legs at a rest stop on the way
+        place({ lngLat: [it.rest.lon, it.rest.lat], vehicle: 'walk', visible: true, size: 1.8 });
+        map.easeTo({ center: [it.rest.lon, it.rest.lat], zoom: 15.5, pitch: 60, duration: 700 });
+        await sleep(1100);
       } else {
         await sleep(700);
       }
@@ -180,6 +201,9 @@ export function createTripMap(container, trip, { onStep } = {}) {
     if (it.type === 'stop') {
       place({ lngLat: [it.poi.lon, it.poi.lat], vehicle: 'walk', visible: true, size: 1.8 });
       map.flyTo({ center: [it.poi.lon, it.poi.lat], zoom: 16.4, pitch: 64, duration: 900 });
+    } else if (it.type === 'rest') {
+      place({ lngLat: [it.rest.lon, it.rest.lat], vehicle: 'walk', visible: true, size: 1.8 });
+      map.flyTo({ center: [it.rest.lon, it.rest.lat], zoom: 15.5, pitch: 60, duration: 900 });
     } else if (it.type === 'leg') {
       const b = it.geom.reduce((bb, p) => bb.extend(p), new maplibregl.LngLatBounds(it.geom[0], it.geom[0]));
       place({ lngLat: it.geom[0], vehicle: it.vehicle, visible: true, size: it.isLong ? 0.9 : 1.1 });
@@ -188,7 +212,39 @@ export function createTripMap(container, trip, { onStep } = {}) {
     onStep?.(i, false);
   }
 
-  return { map, play, pause, focus, isPlaying: () => playing, current: () => current, fitLocal, destroy: () => { pause(); map.remove(); } };
+  // The same trip re-planned (another drive route, departure time or rest stops): the
+  // places are the same, so only the route lines and rest markers change.
+  function setTrip(next) {
+    pause();
+    items = next.items;
+    legs = items.map((it, i) => ({ it, i })).filter((x) => x.it.type === 'leg');
+    if (!map.getSource('route')) return; // not loaded yet: 'load' draws the new items
+    map.getSource('route').setData(routeData());
+    drawRests();
+  }
+
+  // Self-drive: every fuel station along the Bangkok drive, small; tapping one offers to
+  // make it a rest stop (onAdd(station, 'out' | 'back')).
+  function setFuel(list, onAdd) {
+    for (const m of fuelMarkers) m.remove();
+    fuelMarkers = list.map((s) => {
+      const el = document.createElement('button');
+      el.className = 'fuel-pin';
+      el.setAttribute('aria-label', s.name);
+      el.innerHTML = '<i class="ti ti-gas-station"></i>';
+      const box = document.createElement('div');
+      box.className = 'fuel-pop';
+      box.innerHTML = `<b></b><span class="small muted"></span>
+        <div><button data-dir="out">แวะขาไป</button><button data-dir="back">แวะขากลับ</button></div>`;
+      box.querySelector('b').textContent = s.name;
+      box.querySelector('span').textContent = `ปั๊มน้ำมัน · กม. ${s.km} จากกรุงเทพฯ${s.food ? ' · มีร้านกาแฟ/อาหาร' : ''}`;
+      const popup = new maplibregl.Popup({ offset: 14, closeButton: false }).setDOMContent(box);
+      box.querySelectorAll('[data-dir]').forEach((b) => (b.onclick = () => { onAdd(s, b.dataset.dir); popup.remove(); }));
+      return new maplibregl.Marker({ element: el }).setLngLat([s.lon, s.lat]).setPopup(popup).addTo(map);
+    });
+  }
+
+  return { map, play, pause, focus, setTrip, setFuel, isPlaying: () => playing, current: () => current, fitLocal, destroy: () => { pause(); fuelMarkers = []; map.remove(); } };
 }
 
 export { VEHICLE };

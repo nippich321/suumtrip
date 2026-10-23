@@ -4,12 +4,15 @@ import { buildTrip, fmtTime, fmtDur, kindIcon, kindLabel, VEHICLE } from './itin
 import { createTripMap } from './tripmap.js';
 import { showLoader } from './loader.js';
 import { mountDatePicker } from './datepicker.js';
+import { mountDrivePlanner, restIcon } from './drive.js';
 
 const app = document.getElementById('app');
 const S = { cat: 'nat', transport: 'pub', date: nextWeekday(), veto: null, dest: null, trip: null, paid: false, reached: 0 };
 let DATA = null;
 let SCHED = null; // confirmed bus/van/train times (data/schedules.json)
 let tripMap = null;
+let planner = null;
+let ROADSIDE = null; // rest stops along each drive (data/roadside.json), loaded on the first self-drive trip
 
 const fmt = (n) => Number(n).toLocaleString('th-TH');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -207,7 +210,7 @@ const screens = {
       </div>
       <button class="btn btn-primary btn-block" id="paid" style="margin-top:16px">ชำระแล้ว ไปเปิดกล่อง</button>
       <p class="fine">เวอร์ชันสาธิต: QR นี้สร้างตามมาตรฐานพร้อมเพย์จริง แต่ยังไม่ได้ตั้งเลขบัญชีรับเงิน กดปุ่มด้านบนเพื่อไปต่อได้เลย</p>`);
-    app.querySelector('#paid').onclick = () => { S.paid = true; S.dest = null; S.trip = null; go('open'); };
+    app.querySelector('#paid').onclick = () => { S.paid = true; S.dest = null; S.trip = null; S.driveState = null; go('open'); };
   },
 
   open() {
@@ -264,12 +267,9 @@ const screens = {
         <div class="timeline">
           <div class="tl-head"><div><h3 style="margin:0">ทริปของคุณ</h3><span class="small muted">${thaiDate(t.date)} · ${TRANSPORT[t.transport].label}</span></div>
             <a class="btn btn-ghost" href="#choose" style="padding:8px 14px;font-size:14px"><i class="ti ti-refresh"></i> สุ่มใหม่</a></div>
-          <div class="trip-chips">
-            <span title="ที่พัก"><i class="ti ti-bed"></i> ${esc(t.hotel.name)}</span>
-            <span title="ค่าเดินทางโดยประมาณ ต่อคน"><i class="ti ti-coin"></i> ~${fmt(t.travelCost)} บาท/คน</span>
-            <span title="พระอาทิตย์ตก วันแรก"><i class="ti ti-sunset-2"></i> ตก ${fmtTime(t.sun1.sunset)}</span>
-          </div>
-          ${timelineHtml(t)}
+          <div class="trip-chips" id="chips">${chipsHtml(t)}</div>
+          ${t.transport === 'self' ? '<div id="drive"></div>' : ''}
+          <div id="tl">${timelineHtml(t)}</div>
           <div class="verify"><i class="ti ti-info-circle"></i> สถานที่ทั้งหมดดึงจากข้อมูลจริงของ OpenStreetMap ส่วนเวลาเดินทางคำนวณจากถนนจริง เวลาเปิดร้านและรอบรถยังต้องเช็กก่อนเดินทาง</div>
         </div>
       </div>
@@ -283,12 +283,46 @@ const screens = {
       if (tripMap.isPlaying()) { tripMap.pause(); setPlayIcon(false); }
       else { const c = tripMap.current(); tripMap.play(c >= 0 && c < t.items.length - 1 ? c : 0); setPlayIcon(true); }
     };
-    app.querySelectorAll('.stop').forEach((row) => (row.onclick = () => { tripMap.focus(Number(row.dataset.i)); setPlayIcon(false); }));
+    bindTimeline();
+    planner?.destroy();
+    planner = null;
+    if (t.transport === 'self') mountPlanner(t);
   },
 
   partner() { renderPartner(); },
   gift() { renderGift(); },
 };
+
+function chipsHtml(t) {
+  return `<span title="ที่พัก"><i class="ti ti-bed"></i> ${esc(t.hotel.name)}</span>
+    <span title="ค่าเดินทางโดยประมาณ ต่อคน"><i class="ti ti-coin"></i> ~${fmt(t.travelCost)} บาท/คน</span>
+    <span title="พระอาทิตย์ตก วันแรก"><i class="ti ti-sunset-2"></i> ตก ${fmtTime(t.sun1.sunset)}</span>`;
+}
+
+function bindTimeline() {
+  app.querySelectorAll('#tl .stop').forEach((row) => (row.onclick = () => { tripMap.focus(Number(row.dataset.i)); setPlayIcon(false); }));
+}
+
+// Self-drive: departure time, route and rest stops re-plan the same trip (same places).
+async function mountPlanner(t) {
+  if (!ROADSIDE) { try { ROADSIDE = await (await fetch('data/roadside.json')).json(); } catch { ROADSIDE = { destinations: {} }; } }
+  const el = app.querySelector('#drive');
+  if (!el || S.trip !== t) return; // the customer left the page meanwhile
+  planner = mountDrivePlanner(el, {
+    trip: t,
+    roadside: ROADSIDE.destinations[t.dest.id],
+    state: S.driveState,
+    onPlan: (drive) => {
+      S.trip = buildTrip(S.dest, { transport: S.transport, date: S.date, chosen: S.trip.chosen, drive });
+      app.querySelector('#chips').innerHTML = chipsHtml(S.trip);
+      app.querySelector('#tl').innerHTML = timelineHtml(S.trip);
+      bindTimeline();
+      tripMap?.setTrip(S.trip);
+      planner?.update(S.trip);
+    },
+  });
+  S.driveState = planner.state;
+}
 
 // Let the loading car leave once the map has drawn (or after 9 s at most).
 function finishWhenMapReady(loader, map) {
@@ -339,7 +373,7 @@ function timelineHtml(t) {
       html += `<div class="stop" data-i="${i}"><div class="tm">${fmtTime(it.time)}</div><div class="dot"><i class="ti ${kindIcon(it.poi.kind)}"></i></div>
         <div><div class="what">${esc(it.slot.label)} · ${kindLabel(it.poi.kind)}${sun}</div><div class="nm">${esc(it.poi.name)}</div>${it.poi.nameEn ? `<div class="sub">${esc(it.poi.nameEn)}</div>` : ''}</div></div>`;
     } else {
-      const icon = { start: 'ti-home', arrive: 'ti-flag', night: 'ti-moon', depart: 'ti-bus', end: 'ti-home-heart' }[it.type];
+      const icon = { start: 'ti-home', arrive: 'ti-flag', night: 'ti-moon', depart: 'ti-bus', end: 'ti-home-heart', rest: restIcon(it.rest?.kind) }[it.type];
       html += `<div class="stop" data-i="${i}"><div class="tm">${fmtTime(it.time)}</div><div class="dot"><i class="ti ${icon}"></i></div>
         <div><div class="nm">${esc(it.name)}</div>${it.sub ? `<div class="sub">${esc(it.sub)}</div>` : ''}${it.warn ? `<div class="warn"><i class="ti ti-clock-exclamation"></i> ${esc(it.warn)}</div>` : ''}</div></div>`;
     }
@@ -500,7 +534,7 @@ function renderGift() {
 function go(name) { location.hash = name; }
 function route() {
   const name = location.hash.slice(1) || 'home';
-  if (name !== 'trip') { tripMap?.destroy(); tripMap = null; }
+  if (name !== 'trip') { tripMap?.destroy(); tripMap = null; planner?.destroy(); planner = null; }
   (screens[name] || screens.home)();
   window.scrollTo(0, 0);
 }

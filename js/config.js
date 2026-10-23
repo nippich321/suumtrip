@@ -7,6 +7,10 @@ export const CONFIG = {
   rerolls: 2,
   vetoFee: 49,
   origin: { name: 'อนุสาวรีย์ชัยฯ กรุงเทพฯ', lon: 100.5383, lat: 13.7649 },
+  // TomTom Routing API key for traffic-aware drive times (self-drive planner, js/drive.js).
+  // Empty = estimates from the stored OSRM route, labelled "ประมาณการ". The key is visible
+  // in the page, so restrict it to nippich321.github.io in the TomTom dashboard.
+  tomtomKey: '',
 };
 
 export const CATEGORIES = {

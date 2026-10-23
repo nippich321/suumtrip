@@ -46,6 +46,34 @@ Found by clicking through one Nature / public-transport trip (Suan Phueng, Ratch
 4. Breakfast at 08:30 was a pizza restaurant, which is probably not open then. Use opening hours or breakfast-type places only.
 5. After the box is opened, the heading still says "แตะกล่องเพื่อเปิด" (tap the box to open).
 
+## Task for Agent B: keep each day's places close to the hotel and open at the planned time *(Agent A, 2026-10-23 14:05 +07)*
+
+Fixes Open work items 2 and 4 (and most of 3, which is caused by long legs). Branch: `agent-b/near-hotel`, created from `origin/main`.
+
+**Files you own for this task:** `tools/build_data.py`, `data/destinations.json`, `docs/checklist.csv`. **Do not edit** `js/itinerary.js` or `js/app.js` — Agent A is changing them at the same time (travel cost, sunrise timing, heading text). Keep the JSON schema of `destinations.json` unchanged (same keys for destinations, slots, pois and legs) so both changes fit together.
+
+**Input data:** `tools/raw/` is now committed (the Overpass responses and the OSRM route cache used for the current site). Run only `python -I tools/build_data.py`; do not re-run `fetch_pois.py` unless a destination has too few places, and say so in the Change log if you do. New routes are fetched from OSRM and added to `tools/raw/routes.json`; commit that file too.
+
+**Problems seen in the current data:**
+- In Suan Phueng, dinner was 25 km from the previous stop and then 35.7 km back to the hotel. Today `choose_options` ranks by distance to the hotels' midpoint but has no distance limit, so a far place can still be picked when nearby places of that kind run out.
+- Breakfast at 08:30 (slot `d2b`): most picks have no `opening_hours`, and the two that do open later (Khao Yai "ครัว 505" opens 10:00, Chao Samran "See Sea Sun Café" opens 09:30). Suan Phueng gets a pizza place.
+
+**Steps:**
+1. Add a maximum distance from the hotel midpoint (`anchor`) per slot, for example 8 km for meals and cafés and 15 km for sights, views and the sunset/sunrise slots. Pick the numbers yourself; if a destination cannot fill a slot inside the limit, widen it for that slot only and list it in your report.
+2. Keep `cuisine` and `opening_hours` from the OSM tags when loading places (`load_pois`), so the rules below can use them.
+3. Slot `d2b` (breakfast 08:30): accept a place only if its `opening_hours` (when present) opens at or before 08:30, and skip cuisines that do not fit breakfast (pizza, bar, barbecue, หมูกะทะ / mookata, steak, buffet, seafood). Prefer cafés, bakeries, coffee shops, noodle and rice/jok places, and markets. Use the same opening-hours check for the other meal slots against their times (12:00 lunch, 19:00 dinner). A simple parser for common forms like `Mo-Su 07:00-17:00` is enough; treat anything you cannot parse as unknown (allowed) and count how many are unknown.
+4. Regenerate `data/destinations.json` and `docs/checklist.csv`.
+5. Write a small check (a script in `tools/` or a one-off command) that prints, per destination: the longest leg in km between consecutive stops inside the destination (not the Bangkok legs), and the breakfast options with their hours. Paste the output into your Change log line or a short report section.
+
+**Done when:**
+- No leg between consecutive stops inside a destination is longer than about 15 km, except where you list and explain it.
+- No breakfast option is a pizza/mookata/bar place or has known opening hours later than 08:30.
+- The site runs locally (`python -m http.server 5173 --directory .`) and you clicked through at least one trip per category (Sea, Old Town, Nature) with no console errors. Say which trips you opened.
+- Pushed to `agent-b/near-hotel` (never to `main`), with a `[Agent B]` Change log line saying what changed, the check output, and what is still open. Agent A reviews and merges with the owner's agreement.
+
+If something in this task is unclear or impossible, add a `## Question from Agent B: <title>` section on your branch and push it.
+
 ## Change log
 
 - 2026-10-23 13:45 +07 [Agent A] Moved the repository to `nippich321/suumtrip` (public, GitHub Pages from `main`). README rewritten in formal English. Created this file with the roles of Agent A (owner's AI, lead) and Agent B (friend's AI) and the rule to check this file at the start of every task. Open work list above comes from a local click-through; nothing in the site code was changed.
+- 2026-10-23 14:05 +07 [Agent A] Added the task section for Agent B (near-hotel places and opening hours, branch `agent-b/near-hotel`). Committed `tools/raw/` (Overpass responses and OSRM route cache, 1.1 MB) and removed it from `.gitignore` so both agents build from the same input. Agent A now takes Open work items 1, 3 and 5 in `js/itinerary.js` and `js/app.js`. No site code changed in this commit.

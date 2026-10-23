@@ -189,29 +189,39 @@ table.list th { font-weight: 500; color: var(--muted); font-size: 12px; }
 .pill.wait { background: var(--sun-soft); color: var(--gold-ink); }
 .err { color: #c0392b; font-size: 13px; margin-top: 4px; }
 
-/* loading scenes (js/loader.js) */
-.loader { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 62vh; padding: 24px 0; }
-.loader.over { position: absolute; inset: 0; z-index: 10; min-height: 0; background: var(--bg); transition: opacity .45s ease; }
-.loader.over.done { opacity: 0; pointer-events: none; }
-.ld-stage { position: relative; width: min(480px, 92vw); aspect-ratio: 1698 / 720; overflow: hidden; border-radius: 18px; box-shadow: var(--shadow); background: #fbefdc; }
-.loader.over .ld-stage { width: min(440px, 88%); }
-.ld-track { position: absolute; top: 0; left: 0; height: 100%; display: flex; width: max-content; opacity: 0; animation: ld-scroll 7s linear infinite; }
-.ld-stage.ready .ld-track { animation: ld-scroll 7s linear infinite, ld-scene-in .7s ease-out both; }
-.ld-track img { height: 100%; width: auto; display: block; }
-.ld-car { position: absolute; left: 50%; bottom: 3%; width: 50%; aspect-ratio: 520 / 324; overflow: hidden; transform: translateX(-280%); }
-.ld-stage.ready .ld-car { animation: ld-drive-in 1.2s cubic-bezier(.22, .9, .3, 1.12) .6s both; }
-.ld-stage ~ p { opacity: 0; }
-.ld-stage.ready ~ p { animation: ld-fade-up .5s ease-out 1.5s both; }
+/* loading scene (js/loader.js): road first, car drives in and idles, then revs and leaves */
+html.ld-lock, html.ld-lock body { overflow: hidden; }
+.loader { position: fixed; inset: 0; z-index: 100; overflow: hidden; background: #fbefdc; transition: opacity .45s ease; }
+.loader.done { opacity: 0; pointer-events: none; }
+.ld-track { position: absolute; top: 0; left: 0; height: 100%; display: flex; width: max-content; opacity: 0; animation: ld-scroll 10s linear infinite; }
+.loader.ready .ld-track { animation: ld-scroll 10s linear infinite, ld-scene-in .8s ease-out both; }
+.ld-track img { height: 100%; width: auto; max-width: none; display: block; }
+.ld-car { position: absolute; left: 50%; bottom: 4vh; width: min(80vw, 64vh); aspect-ratio: 680 / 424; overflow: hidden; transform: translateX(calc(-50% - 100vw)); }
+.loader.ready .ld-car { animation: ld-drive-in 1.8s cubic-bezier(.12, .7, .25, 1) 1.2s both; }
+.loader.go .ld-car { animation: ld-drive-out .9s cubic-bezier(.55, 0, .85, .35) both; }
 .ld-car img { display: block; height: 100%; width: 1200%; max-width: none; animation: ld-frames .9s steps(12) infinite; }
-.ld-text { font-family: var(--display); font-size: 20px; margin: 14px 0 2px; }
+.ld-caption { position: absolute; left: 50%; top: 9vh; transform: translateX(-50%); width: max-content; max-width: 90vw; text-align: center; padding: 10px 22px; border-radius: 18px; background: rgba(255, 255, 255, .82); box-shadow: var(--shadow); opacity: 0; }
+.loader.ready .ld-caption { animation: ld-fade-up .5s ease-out 2.6s both; }
+.loader.go .ld-caption { animation: ld-fade-out .4s ease-in both; }
+.ld-text { font-family: var(--display); font-size: 20px; margin: 0; }
 .ld-sub { color: var(--muted); font-size: 14px; margin: 0; }
 .ld-dots i { font-style: normal; animation: ld-dot 1.2s infinite; }
 .ld-dots i:nth-child(2) { animation-delay: .2s; }
 .ld-dots i:nth-child(3) { animation-delay: .4s; }
 @keyframes ld-scroll { to { transform: translateX(-50%); } }
 @keyframes ld-frames { to { transform: translateX(-100%); } }
-@keyframes ld-scene-in { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: none; } }
-@keyframes ld-drive-in { from { transform: translateX(-280%); } to { transform: translateX(-50%); } }
-@keyframes ld-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes ld-scene-in { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: none; } }
+@keyframes ld-drive-in { from { transform: translateX(calc(-50% - 100vw)); } to { transform: translateX(-50%); } }
+@keyframes ld-drive-out {
+  0% { transform: translateX(-50%); }
+  18% { transform: translateX(calc(-50% - 3vw)) rotate(-2.5deg); }
+  100% { transform: translateX(calc(-50% + 110vw)) rotate(0); }
+}
+@keyframes ld-fade-up { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translateX(-50%); } }
+@keyframes ld-fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes ld-dot { 0%, 60%, 100% { opacity: .2; } 30% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .loader * { animation: none !important; } .ld-track, .ld-stage ~ p { opacity: 1; } .ld-car { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .loader * { animation: none !important; }
+  .ld-track, .ld-caption { opacity: 1; }
+  .ld-car { transform: translateX(-50%); }
+}

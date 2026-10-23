@@ -3,6 +3,7 @@ import { promptPayPayload } from './promptpay.js';
 import { buildTrip, fmtTime, fmtDur, kindIcon, kindLabel, VEHICLE } from './itinerary.js';
 import { createTripMap } from './tripmap.js';
 import { showLoader } from './loader.js';
+import { mountDatePicker } from './datepicker.js';
 
 const app = document.getElementById('app');
 const S = { cat: 'nat', transport: 'pub', date: nextWeekday(), veto: null, dest: null, trip: null, paid: false };
@@ -74,6 +75,7 @@ const screens = {
   },
 
   choose() {
+    const dayPrice = () => `<span class="small muted">${isWeekend(S.date) ? 'วันหยุด (ศ–อา)' : 'วันธรรมดา (จ–พฤ) ราคาถูกกว่า'}</span><span class="price">${fmt(price())} บาท / 2 คน</span>`;
     const catHtml = Object.entries(CATEGORIES).map(([k, v]) => `
       <button class="opt ${S.cat === k ? 'on' : ''}" data-cat="${k}"><i class="ti ${v.icon}"></i><span class="t">${v.label}</span><span class="d">${v.blurb}</span></button>`).join('');
     const trHtml = Object.entries(TRANSPORT).map(([k, v]) => `
@@ -86,10 +88,8 @@ const screens = {
       <div class="label">หมวด</div>
       <div class="opts three">${catHtml}</div>
       <div class="label">วันเดินทาง (2 วัน 1 คืน)</div>
-      <label class="field"><input type="date" id="date" value="${S.date}" min="${localIso(new Date())}"></label>
-      <div class="opt opt-row" style="box-shadow:none;background:transparent;padding:0">
-        <span class="small muted">${isWeekend(S.date) ? 'วันหยุด (ศ–อา)' : 'วันธรรมดา (จ–พฤ) ราคาถูกกว่า'}</span><span class="price">${fmt(price())} บาท / 2 คน</span>
-      </div>
+      <div id="date"></div>
+      <div class="opt opt-row" id="dayprice" style="box-shadow:none;background:transparent;padding:0">${dayPrice()}</div>
       <div class="label">เดินทางยังไง</div>
       <div class="opts">${trHtml}</div>
       <p class="fine">ออกเดินทางจากกรุงเทพฯ · ใช้เวลาเดินทางไม่เกิน 4 ชม.</p>
@@ -97,7 +97,11 @@ const screens = {
     </section>`;
     app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { S.cat = b.dataset.cat; S.veto = null; screens.choose(); }));
     app.querySelectorAll('[data-tr]').forEach((b) => (b.onclick = () => { S.transport = b.dataset.tr; screens.choose(); }));
-    app.querySelector('#date').onchange = (e) => { if (e.target.value) { S.date = e.target.value; screens.choose(); } };
+    mountDatePicker(app.querySelector('#date'), {
+      value: S.date, min: localIso(new Date()),
+      priceFor: (iso) => (isWeekend(iso) ? CONFIG.prices.weekend : CONFIG.prices.weekday),
+      onChange: (iso) => { S.date = iso; app.querySelector('#dayprice').innerHTML = dayPrice(); },
+    });
     app.querySelector('#next').onclick = () => go('cands');
   },
 

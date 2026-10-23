@@ -247,3 +247,28 @@ html.ld-lock, html.ld-lock body { overflow: hidden; }
   .ld-world, .ld-caption { opacity: 1; }
   .ld-car { transform: translateX(-50%); }
 }
+
+/* travel-date calendar (js/datepicker.js) */
+.dp { position: relative; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 12px 10px; }
+.dp-nav { position: absolute; top: 10px; left: 8px; right: 8px; display: flex; justify-content: space-between; pointer-events: none; }
+.dp-arrow { pointer-events: auto; width: 34px; height: 34px; border-radius: 50%; border: 0; background: transparent; color: var(--ink); font-size: 20px; display: grid; place-items: center; cursor: pointer; }
+.dp-arrow:hover:not(:disabled) { background: var(--coral-soft); }
+.dp-arrow:disabled { color: var(--line); cursor: default; }
+.dp-months { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 18px; }
+.dp-title { text-align: center; font-family: var(--display); font-weight: 500; line-height: 34px; margin-bottom: 6px; }
+.dp-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 4px; }
+.dp-dow { text-align: center; font-size: 12px; color: var(--muted); padding-bottom: 4px; }
+.dp-cell { min-height: 44px; }
+.dp-day { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 10px; padding: 3px 0; font: inherit; color: var(--ink); cursor: pointer; }
+.dp-day b { font-weight: 500; font-size: 15px; line-height: 1.2; }
+.dp-day small { font-size: 10px; line-height: 1.2; color: var(--teal); }
+.dp-day:hover:not(.off) { background: var(--coral-soft); }
+.dp-day.off { color: #c9c0cf; cursor: default; justify-content: flex-start; padding-top: 6px; font-size: 15px; }
+.dp-day.on { background: var(--coral); color: #fff; border-radius: 10px 0 0 10px; }
+.dp-day.back { background: var(--coral-soft); color: var(--coral-dark); border-radius: 0 10px 10px 0; }
+.dp-day.on small { color: #fff; }
+.dp-day.back small { color: var(--coral-dark); }
+.dp-note { margin: 10px 2px 0; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dp-key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.dp-key.on { background: var(--coral); }
+.dp-key.back { background: var(--coral-soft); border: 1px solid var(--coral); }

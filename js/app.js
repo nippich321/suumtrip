@@ -2,6 +2,7 @@ import { CONFIG, CATEGORIES, TRANSPORT } from './config.js';
 import { promptPayPayload } from './promptpay.js';
 import { buildTrip, fmtTime, fmtDur, kindIcon, kindLabel, VEHICLE } from './itinerary.js';
 import { createTripMap } from './tripmap.js';
+import { loaderHtml } from './loader.js';
 
 const app = document.getElementById('app');
 const S = { cat: 'nat', transport: 'pub', date: nextWeekday(), veto: null, dest: null, trip: null, paid: false };
@@ -192,6 +193,7 @@ const screens = {
       <div class="trip">
         <div class="mapwrap">
           <div id="map"></div>
+          ${loaderHtml(t.transport, `กำลังพาไป${t.dest.name}`, { overlay: true, scene: t.dest.cat })}
           <div class="mode-chip" id="modechip"><i class="ti ti-map-2"></i> ${esc(t.dest.name)} · ${esc(t.dest.province)}</div>
           <div class="map-hud">
             <div class="hud-card" id="hud"><span class="muted">กดเล่นเพื่อดูทริปทั้งเส้นทาง</span><b>${esc(t.dest.name)} 2 วัน 1 คืน</b></div>
@@ -213,6 +215,7 @@ const screens = {
     </section>`;
     tripMap?.destroy();
     tripMap = createTripMap(app.querySelector('#map'), t, { onStep: highlight });
+    hideLoaderWhenReady(app.querySelector('.mapwrap .loader'), tripMap.map);
     const btn = app.querySelector('#playbtn');
     btn.onclick = () => {
       if (tripMap.isPlaying()) { tripMap.pause(); setPlayIcon(false); }
@@ -224,6 +227,19 @@ const screens = {
   partner() { renderPartner(); },
   gift() { renderGift(); },
 };
+
+// Keep the loading scene up until the map has drawn (at least 1.6 s so it can be seen, at most 7 s).
+function hideLoaderWhenReady(el, map) {
+  const t0 = performance.now();
+  let done = false;
+  const hide = () => {
+    if (done) return;
+    done = true;
+    setTimeout(() => { el.classList.add('done'); setTimeout(() => el.remove(), 500); }, Math.max(0, 1600 - (performance.now() - t0)));
+  };
+  map.once('idle', hide);
+  setTimeout(hide, 7000);
+}
 
 function setPlayIcon(on) {
   const b = document.getElementById('playbtn');
@@ -432,7 +448,7 @@ function route() {
 }
 
 async function init() {
-  app.innerHTML = '<p class="muted" style="text-align:center;padding:60px">กำลังโหลด…</p>';
+  app.innerHTML = loaderHtml('walk', 'กำลังเตรียมกล่องสุ่มทริป');
   try {
     DATA = await (await fetch('data/destinations.json')).json();
   } catch (e) {

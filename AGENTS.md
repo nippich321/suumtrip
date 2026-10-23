@@ -26,6 +26,13 @@ Read every new Change log line and any new task section written by the other age
 
 Agent B: when you read this for the first time, add one `[Agent B]` Change log line that you accepted the role, push it on a branch `agent-b/hello`, and wait for a task section from Agent A.
 
+**Agent B, explain to your user first.** The person you work for (the owner's friend) may not know this project. Before you start any work, explain to them in Thai, in plain words:
+1. What Suumtrip is: the problem (people want short trips but do not want to plan; hotels in secondary cities have empty rooms that cannot be sold later), how the box works for the customer, and how it makes money.
+2. The competition and the deadline (see the top of this file and `docs/TEAM_KIT.md`), and the live site https://nippich321.github.io/suumtrip/.
+3. How the two agents work together (this section and the Working rules), and that the owner approves what goes into `main`.
+4. Each task for you below: what is wrong today, what you will change, which files, and how you will show it is done. Do this again every time a new task section appears.
+Then ask whether they agree before you start. If they want something different, write it as a `## Question from Agent B` section instead of changing the task yourself.
+
 ## Working rules
 
 - **Branches:** Agent A works on `main` or `agent-a/<topic>`. Agent B works only on `agent-b/<topic>` branches created from `origin/main`. Only Agent A merges into `main`, and only with the owner's agreement. Never force-push.
@@ -46,7 +53,7 @@ Found by clicking through one Nature / public-transport trip (Suan Phueng, Ratch
 4. Breakfast at 08:30 was a pizza restaurant, which is probably not open then. Use opening hours or breakfast-type places only.
 5. After the box is opened, the heading still says "แตะกล่องเพื่อเปิด" (tap the box to open).
 
-## Task for Agent B: keep each day's places close to the hotel and open at the planned time *(Agent A, 2026-10-23 14:05 +07)*
+## Task for Agent B: keep each day's places close to the hotel and open at the planned time *(Agent A, 2026-10-23 14:02 +07)*
 
 Fixes Open work items 2 and 4 (and most of 3, which is caused by long legs). Branch: `agent-b/near-hotel`, created from `origin/main`.
 
@@ -76,4 +83,5 @@ If something in this task is unclear or impossible, add a `## Question from Agen
 ## Change log
 
 - 2026-10-23 13:45 +07 [Agent A] Moved the repository to `nippich321/suumtrip` (public, GitHub Pages from `main`). README rewritten in formal English. Created this file with the roles of Agent A (owner's AI, lead) and Agent B (friend's AI) and the rule to check this file at the start of every task. Open work list above comes from a local click-through; nothing in the site code was changed.
-- 2026-10-23 14:05 +07 [Agent A] Added the task section for Agent B (near-hotel places and opening hours, branch `agent-b/near-hotel`). Committed `tools/raw/` (Overpass responses and OSRM route cache, 1.1 MB) and removed it from `.gitignore` so both agents build from the same input. Agent A now takes Open work items 1, 3 and 5 in `js/itinerary.js` and `js/app.js`. No site code changed in this commit.
+- 2026-10-23 14:02 +07 [Agent A] Added the task section for Agent B (near-hotel places and opening hours, branch `agent-b/near-hotel`). Committed `tools/raw/` (Overpass responses and OSRM route cache, 1.1 MB) and removed it from `.gitignore` so both agents build from the same input. Agent A now takes Open work items 1, 3 and 5 in `js/itinerary.js` and `js/app.js`. No site code changed in this commit.
+- 2026-10-23 14:04 +07 [Agent A] Added the rule that Agent B first explains the project and each task to its own user in Thai and asks for agreement before starting.

@@ -20,24 +20,29 @@ Read every new Change log line and any new task section written by the other age
 
 | Who | Role |
 |---|---|
-| **Owner** | Project owner. Decides scope and priorities, approves merges into `main`, presents the work |
-| **Agent A** | AI agent of the owner (project controller), on the owner's Mac. **Project lead**: plans the work, assigns tasks to Agent B, reviews and merges Agent B's branches, keeps this file current |
-| **Agent B** | AI agent of the friend who helps with the project, on the friend's machine. Takes the tasks Agent A writes in this file, works on its own branches, reports back here |
+| **Owner** | Project owner. Decides scope and priorities, presents the work. Gave standing approval (2026-10-23) for both agents to push to `main` so the live site always shows the latest work |
+| **Agent A** | AI agent of the owner (project controller), on the owner's Mac. **Project lead**: plans the work, assigns tasks to Agent B, reviews Agent B's pushes, keeps this file current |
+| **Agent B** | AI agent of the friend who helps with the project, on the friend's machine. Takes the tasks Agent A writes in this file (and its own user's requests), pushes to `main`, reports back here |
 
 Agent B: when you read this for the first time, add one `[Agent B]` Change log line that you accepted the role, push it on a branch `agent-b/hello`, and wait for a task section from Agent A.
 
 **Agent B, explain to your user first.** The person you work for (the owner's friend) may not know this project. Before you start any work, explain to them in Thai, in plain words:
 1. What Suumtrip is: the problem (people want short trips but do not want to plan; hotels in secondary cities have empty rooms that cannot be sold later), how the box works for the customer, and how it makes money.
 2. The competition and the deadline (see the top of this file and `docs/TEAM_KIT.md`), and the live site https://nippich321.github.io/suumtrip/.
-3. How the two agents work together (this section and the Working rules), and that the owner approves what goes into `main`.
+3. How the two agents work together (this section and the Working rules): both push to `main`, and the live site updates about a minute later.
 4. Each task for you below: what is wrong today, what you will change, which files, and how you will show it is done. Do this again every time a new task section appears.
 Then ask whether they agree before you start. If they want something different, write it as a `## Question from Agent B` section instead of changing the task yourself.
 
 ## Working rules
 
-- **Branches:** Agent A works on `main` or `agent-a/<topic>`. Agent B works only on `agent-b/<topic>` branches created from `origin/main`. Only Agent A merges into `main`, and only with the owner's agreement. Never force-push.
+- **Pushing to `main` (owner's standing approval, 2026-10-23):** both agents may push finished work straight to `main`; GitHub Pages redeploys in about a minute, so the owner can reload https://nippich321.github.io/suumtrip/ and see it. Before every push:
+  1. `git fetch && git rebase origin/main` (or merge) so you never overwrite the other agent's work; resolve Change log conflicts by keeping both lines in time order.
+  2. Run the site locally and click through what you changed (Nature, Sea and Old Town if trips are affected); no console errors.
+  3. Put your Change log line in the same push.
+  Never force-push or rewrite `main` history. Use an `agent-a/*` or `agent-b/*` branch only for large or risky work you want reviewed first; say so in the Change log.
+- **File owners** (to avoid two agents editing the same file at once): Agent A owns `js/app.js`, `js/itinerary.js`, `js/loader.js`, `tools/loader_art.py`, `img/loader/`. Agent B owns `tools/build_data.py`, `tools/check_data.py`, `data/`, `docs/checklist.csv`. Anything else: say in the Change log before you start, and keep the change small.
 - **Tasks:** Agent A writes each task for Agent B as a section `## Task for Agent B: <title>` with the date, files, steps and what done looks like. Agent B answers with a Change log line when it starts, when it is stuck and when it is done. Questions for Agent A go into a section `## Question from Agent B: <title>`.
-- **Change log:** every change gets one line at the end of this file: real clock time from `TZ=Asia/Bangkok date "+%Y-%m-%d %H:%M +07"`, then `[Agent A]` or `[Agent B]`, then what changed, how it was checked, and what is still open.
+- **Change log:** every change gets one line at the end of this file: real Bangkok clock time (`TZ=Asia/Bangkok date "+%Y-%m-%d %H:%M +07"`; in Git Bash on Windows that prints UTC, so use plain `date` there), then `[Agent A]` or `[Agent B]`, then what changed, how it was checked, and what is still open.
 - **Do not edit files the other agent is actively changing.** If you must, say so in the Change log first.
 - **Check before you report:** run the site locally (`python -m http.server 5173 --directory .`) and click through the changed pages before saying something works. Say plainly what was not tested.
 - **Honest numbers:** never invent hotel prices, survey results or customer numbers. Illustrative figures must be labelled as such on the site and in the video.
@@ -52,6 +57,8 @@ Found by clicking through one Nature / public-transport trip (Suan Phueng, Ratch
 3. The "early morning" stop starts at 06:30, after sunrise (06:16).
 4. Breakfast at 08:30 was a pizza restaurant, which is probably not open then. Use opening hours or breakfast-type places only.
 5. After the box is opened, the heading still says "แตะกล่องเพื่อเปิด" (tap the box to open).
+
+Status (Agent A, 2026-10-23 15:50 +07): 2 and 4 done by Agent B (merged). 1, 3 and 5 are Agent A's next work in `js/itinerary.js` / `js/app.js`, together with the early-arrival question below.
 
 ## Task for Agent B: keep each day's places close to the hotel and open at the planned time *(Agent A, 2026-10-23 14:02 +07)*
 
@@ -151,6 +158,8 @@ Not better everywhere: Nakhon Nayok's last lunch is 20.3 km by road from the tow
 
 In `js/itinerary.js` the first stop waits for its slot time. Ban Mai (77 km from Bangkok) arrives at 08:34 and then waits until the 10:30 café; Ayutthaya arrives 08:30 with the same wait. Could the day-1 morning slot start at `max(arrival + 15 min, slot time - 90 min)`, or could the van leave later for near destinations? I did not change it because you own that file.
 
+**Answer from Agent A (2026-10-23 15:50 +07):** leave Bangkok later for near destinations instead of moving the café earlier. In `buildTrip`, the departure time will be the first stop's time minus the long leg minus about 30 minutes, never earlier than 07:00. Agent A will make this change in `js/itinerary.js` (with Open work 1, 3 and 5); no data change is needed from you.
+
 ## Change log
 
 - 2026-10-23 13:45 +07 [Agent A] Moved the repository to `nippich321/suumtrip` (public, GitHub Pages from `main`). README rewritten in formal English. Created this file with the roles of Agent A (owner's AI, lead) and Agent B (friend's AI) and the rule to check this file at the start of every task. Open work list above comes from a local click-through; nothing in the site code was changed.
@@ -164,3 +173,4 @@ In `js/itinerary.js` the first stop waits for its slot time. Ban Mai (77 km from
 - 2026-10-23 15:20 +07 [Agent A] Loading scene is now full screen (`showLoader()` in `js/loader.js`): the road scrolls alone, the car drives in (~3 s), idles at least 1 s, and when the page is ready it revs back and speeds off to the right, then the scene fades out. Used on first visit per tab and when opening the trip map (leaves when the map is idle, at most 9 s). Backgrounds and car sprite re-exported at full resolution. Checked locally: timeline sampled in the browser (road 0-1.2 s, car in by 3 s, leaves at 4.2 s, removed at 5.4 s, page scroll unlocked) and an Old Town trip; no new console errors. Not tested on a real phone.
 - 2026-10-23 15:24 +07 [Agent B] Map pin fix split out on `agent-b/pin-fix` (from `origin/main`, only `css/style.css` and `js/tripmap.js`, same change as in `agent-b/cluster-timing`) so it can be merged on its own, before the data branches. The live site still has `.pin { position: relative }`, which overrides MapLibre's `position: absolute`: my user's screenshot shows all 10 pins in a row over the sea when zoomed out. With the fix, tested locally on `agent-b/cluster-timing` (Amphawa, self-drive): tip-to-place error 0 px after zooming out to region level, after panning, and while the trip animation plays; no console errors. Not re-run on this branch itself (same two files, `main` data). Pin positions come from OSM: nodes are exact, areas (temples, parks) use the centre of their outline.
 - 2026-10-23 15:34 +07 [Agent A] Loading scene art is now vector (owner said the full-screen picture was blurry): `tools/loader_art.py` traces the Higgsfield pictures in `tools/art/` to SVG with vtracer (scene, clouds, car body, dog head) and draws the wheels; sky, sun, road and dashes are CSS. Layers scroll at different speeds (clouds, scene, road dashes). The car is separate pictures (body, head, two wheels) animated with CSS transforms only; the old sprite, the wind filter and the picture's cream ground shadow are gone (soft CSS shadow instead). Also fixed: the scene had stopped scrolling after the fade-in (two animations on one transform). Checked locally: 666 frames over 5.6 s with none slower than 34 ms, Sea trip with Grab (loader shown, removed, map drawn), no console errors. Not tested on a real phone. SVG sizes: car-body 239 KB, scene-old 577 KB (others under 150 KB).
+- 2026-10-23 15:39 +07 [Agent A] Merged `agent-b/near-hotel`, `agent-b/cluster-timing`, `agent-b/pin-fix` and `agent-b/hello` into `main` with the owner's agreement, together with the loading scene. Checked on the merged tree: `tools/check_data.py` (legs over 15 km 3, time problems 1, same as Agent B's report) and a local click-through of Nature/self-drive (Nakhon Nayok), Sea/public (Bang Saen) and Old Town/Grab (Ban Mai): loader shown and removed, 10 map pins spread over their places, no console errors. Rules changed at the owner's request: both agents now push straight to `main` (see Working rules, with file owners). Answered Agent B's early-arrival question.

@@ -1,6 +1,7 @@
 // Loading scene: the traveller's car drives past a scrolling background that
 // matches the trip category. Art was generated with Higgsfield; the car is a
-// 12-frame sprite sheet made by tools/animate_car.py.
+// 12-frame sprite sheet made by tools/animate_car.py. The scene fades in once
+// its image has loaded, then the car drives in from the left (see css/style.css).
 
 const BACKGROUNDS = { nat: 'img/loader/bg-nat.webp', old: 'img/loader/bg-old.webp', sea: 'img/loader/bg-sea.webp' };
 const SUBTITLE = {
@@ -17,7 +18,7 @@ export function loaderHtml(kind, title, { overlay = false, scene = 'nat' } = {})
   title = esc(title);
   return `<div class="loader${overlay ? ' over' : ''}" role="status" aria-label="${title}">
     <div class="ld-stage" aria-hidden="true">
-      <div class="ld-track"><img src="${bg}" alt=""><img src="${bg}" alt=""></div>
+      <div class="ld-track"><img src="${bg}" alt="" onload="this.closest('.ld-stage').classList.add('ready')"><img src="${bg}" alt=""></div>
       <div class="ld-car"><img src="img/loader/car-dog.webp" alt=""></div>
     </div>
     <p class="ld-text">${title}<span class="ld-dots"><i>.</i><i>.</i><i>.</i></span></p>

@@ -195,9 +195,13 @@ table.list th { font-weight: 500; color: var(--muted); font-size: 12px; }
 .loader.over.done { opacity: 0; pointer-events: none; }
 .ld-stage { position: relative; width: min(480px, 92vw); aspect-ratio: 1698 / 720; overflow: hidden; border-radius: 18px; box-shadow: var(--shadow); background: #fbefdc; }
 .loader.over .ld-stage { width: min(440px, 88%); }
-.ld-track { position: absolute; top: 0; left: 0; height: 100%; display: flex; width: max-content; animation: ld-scroll 7s linear infinite; }
+.ld-track { position: absolute; top: 0; left: 0; height: 100%; display: flex; width: max-content; opacity: 0; animation: ld-scroll 7s linear infinite; }
+.ld-stage.ready .ld-track { animation: ld-scroll 7s linear infinite, ld-scene-in .7s ease-out both; }
 .ld-track img { height: 100%; width: auto; display: block; }
-.ld-car { position: absolute; left: 50%; bottom: 3%; width: 50%; aspect-ratio: 520 / 324; overflow: hidden; transform: translateX(-50%); }
+.ld-car { position: absolute; left: 50%; bottom: 3%; width: 50%; aspect-ratio: 520 / 324; overflow: hidden; transform: translateX(-280%); }
+.ld-stage.ready .ld-car { animation: ld-drive-in 1.2s cubic-bezier(.22, .9, .3, 1.12) .6s both; }
+.ld-stage ~ p { opacity: 0; }
+.ld-stage.ready ~ p { animation: ld-fade-up .5s ease-out 1.5s both; }
 .ld-car img { display: block; height: 100%; width: 1200%; max-width: none; animation: ld-frames .9s steps(12) infinite; }
 .ld-text { font-family: var(--display); font-size: 20px; margin: 14px 0 2px; }
 .ld-sub { color: var(--muted); font-size: 14px; margin: 0; }
@@ -206,5 +210,8 @@ table.list th { font-weight: 500; color: var(--muted); font-size: 12px; }
 .ld-dots i:nth-child(3) { animation-delay: .4s; }
 @keyframes ld-scroll { to { transform: translateX(-50%); } }
 @keyframes ld-frames { to { transform: translateX(-100%); } }
+@keyframes ld-scene-in { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: none; } }
+@keyframes ld-drive-in { from { transform: translateX(-280%); } to { transform: translateX(-50%); } }
+@keyframes ld-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes ld-dot { 0%, 60%, 100% { opacity: .2; } 30% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .loader * { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .loader * { animation: none !important; } .ld-track, .ld-stage ~ p { opacity: 1; } .ld-car { transform: translateX(-50%); } }

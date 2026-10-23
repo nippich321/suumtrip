@@ -228,14 +228,14 @@ const screens = {
   gift() { renderGift(); },
 };
 
-// Keep the loading scene up until the map has drawn (at least 1.6 s so it can be seen, at most 7 s).
+// Keep the loading scene up until the map has drawn (at least 2.6 s so the car can drive in, at most 7 s).
 function hideLoaderWhenReady(el, map) {
   const t0 = performance.now();
   let done = false;
   const hide = () => {
     if (done) return;
     done = true;
-    setTimeout(() => { el.classList.add('done'); setTimeout(() => el.remove(), 500); }, Math.max(0, 1600 - (performance.now() - t0)));
+    setTimeout(() => { el.classList.add('done'); setTimeout(() => el.remove(), 500); }, Math.max(0, 2600 - (performance.now() - t0)));
   };
   map.once('idle', hide);
   setTimeout(hide, 7000);
@@ -449,8 +449,12 @@ function route() {
 
 async function init() {
   app.innerHTML = loaderHtml('walk', 'กำลังเตรียมกล่องสุ่มทริป');
+  // first visit in this tab: keep the scene long enough for the car to drive in
+  let seen = false;
+  try { seen = sessionStorage.getItem('suumtrip.intro') === '1'; sessionStorage.setItem('suumtrip.intro', '1'); } catch { /* ignore */ }
+  const minWait = new Promise((r) => setTimeout(r, seen ? 0 : 2600));
   try {
-    DATA = await (await fetch('data/destinations.json')).json();
+    [DATA] = await Promise.all([fetch('data/destinations.json').then((r) => r.json()), minWait]);
   } catch (e) {
     app.innerHTML = '<p style="text-align:center;padding:60px">โหลดข้อมูลไม่สำเร็จ ลองรีเฟรชอีกครั้ง</p>';
     return;

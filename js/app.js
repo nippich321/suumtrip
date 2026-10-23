@@ -6,8 +6,9 @@ import { showLoader } from './loader.js';
 import { mountDatePicker } from './datepicker.js';
 
 const app = document.getElementById('app');
-const S = { cat: 'nat', transport: 'pub', date: nextWeekday(), veto: null, dest: null, trip: null, paid: false };
+const S = { cat: 'nat', transport: 'pub', date: nextWeekday(), veto: null, dest: null, trip: null, paid: false, reached: 0 };
 let DATA = null;
+let SCHED = null; // confirmed bus/van/train times (data/schedules.json)
 let tripMap = null;
 
 const fmt = (n) => Number(n).toLocaleString('th-TH');
@@ -26,6 +27,32 @@ const rackFor = (d) => Math.round(d.rack * (isWeekend(S.date) ? 1.3 : 1) / 10) *
 const isWeekend = (iso) => { const g = new Date(iso).getDay(); return g === 0 || g === 5 || g === 6; };
 const price = () => (isWeekend(S.date) ? CONFIG.prices.weekend : CONFIG.prices.weekday);
 const thaiDate = (iso) => new Date(iso).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
+
+const WIZ = [
+  { id: 'choose', label: 'วิธีเดินทาง', value: () => TRANSPORT[S.transport].label },
+  { id: 'cat', label: 'แนวทริป', value: () => CATEGORIES[S.cat].label },
+  { id: 'date', label: 'วันเดินทาง', value: () => thaiDate(S.date) },
+  { id: 'cands', label: 'ปลายทางที่อาจได้', value: () => (S.veto ? 'ตัดทิ้ง 1 ที่' : '') },
+  { id: 'pay', label: 'ชำระเงิน', value: () => '' },
+];
+
+function wizard(id, body) {
+  const n = WIZ.findIndex((w) => w.id === id);
+  S.reached = Math.max(S.reached, n);
+  const list = WIZ.map((w, i) => {
+    const state = i === n ? 'now' : i <= S.reached ? 'done' : 'todo';
+    const inner = `<span class="wiz-dot">${state === 'done' ? '<i class="ti ti-check"></i>' : ''}</span>
+      <span class="wiz-txt"><span>${w.label}</span>${state === 'done' && w.value() ? `<b>${esc(w.value())}</b>` : ''}</span>`;
+    return state === 'done' ? `<li class="done"><a href="#${w.id}">${inner}</a></li>` : `<li class="${state}" ${state === 'now' ? 'aria-current="step"' : ''}>${inner}</li>`;
+  }).join('');
+  return `
+    <section class="screen wide wiz">
+      <aside class="wiz-side"><div class="wiz-title">กล่องสุ่มทริปของคุณ</div><ol>${list}</ol></aside>
+      <div class="wiz-main">${body}</div>
+    </section>`;
+}
+
+const nextBtn = (to, label = 'ต่อไป') => `<div class="wiz-next">${WIZ.findIndex((w) => w.id === to) > 1 ? `<a class="btn btn-ghost" href="#${WIZ[WIZ.findIndex((w) => w.id === to) - 2].id}">ย้อนกลับ</a>` : ''}<a class="btn btn-primary" href="#${to}">${label}</a></div>`;
 
 function steps(n) {
   return `<div class="steps" aria-label="ขั้นที่ ${n} จาก 5">${[1, 2, 3, 4, 5].map((i) => `<span class="${i <= n ? 'on' : ''}"></span>`).join('')}</div>`;
@@ -75,41 +102,50 @@ const screens = {
   },
 
   choose() {
-    const dayPrice = () => `<span class="small muted">${isWeekend(S.date) ? 'วันหยุด (ศ–อา)' : 'วันธรรมดา (จ–พฤ) ราคาถูกกว่า'}</span><span class="price">${fmt(price())} บาท / 2 คน</span>`;
+    const art = { pub: ['ti-train', 'ti-bus'], self: ['ti-steering-wheel', 'ti-car'] };
+    const cards = Object.entries(TRANSPORT).map(([k, v]) => `
+      <button class="trcard ${k} ${S.transport === k ? 'on' : ''}" data-tr="${k}" aria-pressed="${S.transport === k}">
+        <span class="trcard-art">${art[k].map((i) => `<i class="ti ${i}"></i>`).join('')}</span>
+        <span class="trcard-body"><span class="t">${v.label}</span><span class="d">${v.note}</span></span>
+      </button>`).join('');
+    app.innerHTML = wizard('choose', `
+      <h2>เดินทางแบบไหนดี?</h2>
+      <p class="muted">ออกจากกรุงเทพฯ ไม่เกิน 4 ชม. ไม่ต้องเลือกจังหวัด เดี๋ยวกล่องเลือกให้</p>
+      <div class="trcards">${cards}</div>
+      ${S.transport === 'pub' ? '<p class="fine"><i class="ti ti-clock"></i> ขาไปและขากลับใช้เวลารถไฟ/รถตู้จากตารางจริง ทีมงานตรวจทุกรอบก่อนแสดงในแผน</p>' : ''}
+      ${nextBtn('cat')}`);
+    app.querySelectorAll('[data-tr]').forEach((b) => (b.onclick = () => { S.transport = b.dataset.tr; screens.choose(); }));
+  },
+
+  cat() {
     const catHtml = Object.entries(CATEGORIES).map(([k, v]) => `
       <button class="opt ${S.cat === k ? 'on' : ''}" data-cat="${k}"><i class="ti ${v.icon}"></i><span class="t">${v.label}</span><span class="d">${v.blurb}</span></button>`).join('');
-    const trHtml = Object.entries(TRANSPORT).map(([k, v]) => `
-      <button class="opt opt-row ${S.transport === k ? 'on' : ''}" data-tr="${k}"><i class="ti ${v.icon}"></i><span><span class="t">${v.label}</span><span class="d">${v.note}</span></span></button>`).join('');
-    app.innerHTML = `
-    <section class="screen">
-      ${steps(1)}
+    app.innerHTML = wizard('cat', `
       <h2>อยากได้ทริปแนวไหน?</h2>
-      <p class="muted">ไม่ต้องเลือกจังหวัด เดี๋ยวกล่องเลือกให้</p>
-      <div class="label">หมวด</div>
+      <p class="muted">เลือกแค่แนว ที่เหลือกล่องจัดให้</p>
       <div class="opts three">${catHtml}</div>
-      <div class="label">วันเดินทาง (2 วัน 1 คืน)</div>
+      ${nextBtn('date')}`);
+    app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { S.cat = b.dataset.cat; S.veto = null; screens.cat(); }));
+  },
+
+  date() {
+    const dayPrice = () => `<span class="small muted">${isWeekend(S.date) ? 'วันหยุด (ศ–อา)' : 'วันธรรมดา (จ–พฤ) ราคาถูกกว่า'}</span><span class="price">${fmt(price())} บาท / 2 คน</span>`;
+    app.innerHTML = wizard('date', `
+      <h2>ไปวันไหนดี?</h2>
+      <p class="muted">เลือกวันไป วันกลับคือวันถัดไป (2 วัน 1 คืน)</p>
       <div id="date"></div>
-      <div class="opt opt-row" id="dayprice" style="box-shadow:none;background:transparent;padding:0">${dayPrice()}</div>
-      <div class="label">เดินทางยังไง</div>
-      <div class="opts">${trHtml}</div>
-      <p class="fine">ออกเดินทางจากกรุงเทพฯ · ใช้เวลาเดินทางไม่เกิน 4 ชม.</p>
-      <button class="btn btn-primary btn-block" id="next">ดูปลายทางที่อาจได้</button>
-    </section>`;
-    app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { S.cat = b.dataset.cat; S.veto = null; screens.choose(); }));
-    app.querySelectorAll('[data-tr]').forEach((b) => (b.onclick = () => { S.transport = b.dataset.tr; screens.choose(); }));
+      <div class="opt opt-row" id="dayprice" style="box-shadow:none;background:transparent;padding:0;margin-top:10px">${dayPrice()}</div>
+      ${nextBtn('cands', 'ดูปลายทางที่อาจได้')}`);
     mountDatePicker(app.querySelector('#date'), {
       value: S.date, min: localIso(new Date()),
       priceFor: (iso) => (isWeekend(iso) ? CONFIG.prices.weekend : CONFIG.prices.weekday),
       onChange: (iso) => { S.date = iso; app.querySelector('#dayprice').innerHTML = dayPrice(); },
     });
-    app.querySelector('#next').onclick = () => go('cands');
   },
 
   cands() {
     const list = candidates();
-    app.innerHTML = `
-    <section class="screen">
-      ${steps(2)}
+    app.innerHTML = wizard('cands', `
       <h2>กล่อง${CATEGORIES[S.cat].label}นี้ อาจได้ไป…</h2>
       <p class="muted">เปิดโอกาสออกให้เห็นทุกที่ ตัดที่ที่ไม่อยากไปทิ้งได้ฟรี 1 ที่</p>
       ${list.map((d) => `
@@ -125,8 +161,7 @@ const screens = {
         <div><span>กล่องสุ่มทริป 2 วัน 1 คืน (2 คน)</span><b>${fmt(price())} บาท</b></div>
       </div>
       <button class="btn btn-primary btn-block" id="buy" style="margin-top:16px">ซื้อกล่องนี้ ${fmt(price())} บาท</button>
-      <p class="fine">ราคารวมที่พัก 1 คืน และแผนเที่ยวครบทุกช่วง ไม่รวมค่าเดินทางและค่าอาหาร (มีประมาณการให้ในแผน)</p>
-    </section>`;
+      <p class="fine">ราคารวมที่พัก 1 คืน และแผนเที่ยวครบทุกช่วง ไม่รวมค่าเดินทางและค่าอาหาร (มีประมาณการให้ในแผน)</p>`);
     app.querySelectorAll('[data-veto]').forEach((b) => (b.onclick = () => { S.veto = S.veto === b.dataset.veto ? null : b.dataset.veto; screens.cands(); }));
     app.querySelector('#buy').onclick = () => go('pay');
   },
@@ -136,9 +171,7 @@ const screens = {
     const qr = window.qrcode(0, 'M');
     qr.addData(payload);
     qr.make();
-    app.innerHTML = `
-    <section class="screen">
-      ${steps(3)}
+    app.innerHTML = wizard('pay', `
       <div class="paybox">
         <span class="pp">PromptPay</span>
         <div class="qr">${qr.createSvgTag({ cellSize: 5, margin: 2, scalable: true })}</div>
@@ -151,8 +184,7 @@ const screens = {
         </div>
       </div>
       <button class="btn btn-primary btn-block" id="paid" style="margin-top:16px">ชำระแล้ว ไปเปิดกล่อง</button>
-      <p class="fine">เวอร์ชันสาธิต: QR นี้สร้างตามมาตรฐานพร้อมเพย์จริง แต่ยังไม่ได้ตั้งเลขบัญชีรับเงิน กดปุ่มด้านบนเพื่อไปต่อได้เลย</p>
-    </section>`;
+      <p class="fine">เวอร์ชันสาธิต: QR นี้สร้างตามมาตรฐานพร้อมเพย์จริง แต่ยังไม่ได้ตั้งเลขบัญชีรับเงิน กดปุ่มด้านบนเพื่อไปต่อได้เลย</p>`);
     app.querySelector('#paid').onclick = () => { S.paid = true; S.dest = null; S.trip = null; go('open'); };
   },
 
@@ -178,7 +210,7 @@ const screens = {
       setTimeout(() => {
         clearInterval(iv);
         S.dest = drawDestination();
-        S.trip = buildTrip(S.dest, { transport: S.transport, date: S.date });
+        S.trip = buildTrip(S.dest, { transport: S.transport, date: S.date, schedule: SCHED?.confirmed?.[S.dest.id], transfer: SCHED?.transfers?.[S.dest.id] });
         cube.classList.remove('shake');
         cube.classList.add('open');
         rl.textContent = '';
@@ -257,7 +289,7 @@ function highlight(i, playing) {
   if (!hud || !it) return;
   document.getElementById('hudbar').style.width = `${((i + 1) / t.items.length) * 100}%`;
   if (it.type === 'leg') {
-    const v = VEHICLE[it.vehicle];
+    const v = it.label ? { label: it.label, icon: it.icon } : VEHICLE[it.vehicle];
     hud.innerHTML = `<span class="muted"><i class="ti ${v.icon}"></i> ${v.label} · ${fmtDur(it.sec)}</span><b>${it.isLong ? (it.to === 'ORIGIN' ? 'กลับกรุงเทพฯ' : `กรุงเทพฯ → ${esc(t.dest.name)}`) : 'กำลังไปจุดถัดไป'}</b>`;
   } else if (it.type === 'stop') {
     hud.innerHTML = `<span class="muted">${fmtTime(it.time)} · ${esc(it.slot.label)}</span><b>${esc(it.poi.name)}</b>`;
@@ -273,7 +305,7 @@ function timelineHtml(t) {
     const d = it.day ?? day;
     if (it.type !== 'leg' && d !== day) { day = d; html += `<div class="day-h">วันที่ ${day} · ${thaiDate(new Date(new Date(t.date).getTime() + (day - 1) * 86400000).toISOString())}</div>`; }
     if (it.type === 'leg') {
-      const v = VEHICLE[it.vehicle];
+      const v = it.label ? { label: it.label, icon: it.icon } : VEHICLE[it.vehicle];
       const km = it.m >= 1000 ? `${(it.m / 1000).toFixed(1)} กม.` : `${it.m} ม.`;
       html += `<div class="stop leg" data-i="${i}"><div class="tm"></div><div class="dot"><i class="ti ${v.icon}"></i></div>
         <div class="nm">${v.label} ${fmtDur(it.sec)} · ${km}${it.cost ? ` · ~${fmt(it.cost)}฿` : ''}</div></div>`;
@@ -284,7 +316,7 @@ function timelineHtml(t) {
     } else {
       const icon = { start: 'ti-home', arrive: 'ti-flag', night: 'ti-moon', depart: 'ti-bus', end: 'ti-home-heart' }[it.type];
       html += `<div class="stop" data-i="${i}"><div class="tm">${fmtTime(it.time)}</div><div class="dot"><i class="ti ${icon}"></i></div>
-        <div><div class="nm">${esc(it.name)}</div>${it.sub ? `<div class="sub">${esc(it.sub)}</div>` : ''}</div></div>`;
+        <div><div class="nm">${esc(it.name)}</div>${it.sub ? `<div class="sub">${esc(it.sub)}</div>` : ''}${it.warn ? `<div class="warn"><i class="ti ti-clock-exclamation"></i> ${esc(it.warn)}</div>` : ''}</div></div>`;
     }
   });
   return html;
@@ -461,6 +493,8 @@ async function init() {
     app.innerHTML = '<p style="text-align:center;padding:60px">โหลดข้อมูลไม่สำเร็จ ลองรีเฟรชอีกครั้ง</p>';
     return;
   }
+  // timetables are optional: without them trips show estimated times marked "waiting for a check"
+  try { SCHED = await (await fetch('data/schedules.json')).json(); } catch { SCHED = null; }
   const cats = new Set(DATA.destinations.map((d) => d.cat));
   if (!cats.has(S.cat)) S.cat = [...cats][0];
   window.addEventListener('hashchange', route);

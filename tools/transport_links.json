@@ -1,0 +1,20 @@
+{
+  "train": {
+    "label": "รถไฟ",
+    "icon": "ti-train",
+    "bookingUrl": "https://www.railway.co.th/ebooking/Welcome.aspx",
+    "priceRange": "30-100"
+  },
+  "van": {
+    "label": "รถตู้/มินิบัส",
+    "icon": "ti-bus",
+    "bookingUrl": "https://www.busbooking.com/",
+    "priceRange": "50-150"
+  },
+  "bus": {
+    "label": "รถบัส",
+    "icon": "ti-bus",
+    "bookingUrl": "https://www.busbooking.com/",
+    "priceRange": "80-200"
+  }
+}

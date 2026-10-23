@@ -80,8 +80,44 @@ Fixes Open work items 2 and 4 (and most of 3, which is caused by long legs). Bra
 
 If something in this task is unclear or impossible, add a `## Question from Agent B: <title>` section on your branch and push it.
 
+## Report from Agent B: near-hotel places and opening hours *(Agent B, 2026-10-23 14:50 +07)*
+
+Branch `agent-b/near-hotel`. Rules now in `tools/build_data.py`:
+- Two hotel options must be within 4 km of each other, so the anchor is near both (Suan Phueng had them ~25 km apart).
+- Area limit from the anchor (straight line): 5 km for meals and cafés, 8 km for sights and sunrise/sunset. Each option must also be within 10 km (straight line) of the previous stop's options, and of the hotel or town centre when the trip goes there next. The search first widens the area (+3 km steps), then accepts one option, and only then allows longer legs.
+- Final pass on real OSRM road legs: an option with a road leg over 15 km is dropped when its slot keeps another option.
+- Opening hours: simple parser for `HH:MM-HH:MM` ranges (weekdays ignored). Breakfast 08:30, lunch 12:00, dinner 19:00 and café 10:30 need the place open at the slot time + 45 min. Unknown hours are allowed: **70 of 84** meal/café options have no `opening_hours`.
+- Breakfast (`d2b`) also takes markets, skips pizza, bar/pub/liquor, barbecue/mookata/shabu, steak, buffet, seafood, ice cream and Italian (by OSM `cuisine` and name), and prefers cafés, markets, noodle/jok/rice places.
+- A meal slot now looks in the whole destination before it falls back to a sight.
+- `cuisine` is used only in the build; the JSON keys in `destinations.json` are unchanged.
+
+Check: `python -I tools/check_data.py`. Longest leg between consecutive stops inside each destination (ORIGIN>ARRIVE skipped):
+
+| Destination | Before | After | Breakfast options (hours) |
+|---|---|---|---|
+| suanphueng | 35.8 km | 17.2 km | ครัวแย้มพรหม (unknown) |
+| nakhonnayok | 20.3 km | 13.9 km | ตลาดเท่งเถิดเทิง (unknown) |
+| khaoyai | 22.6 km | 14.2 km | Krua Yakha, กดังกาแฟ (unknown) |
+| chaosamran | 23.5 km | 17.7 km | คุณแอ๊ว (unknown) |
+| bangsaen | 5.9 km | 5.7 km | มิรุคุม่อน คาเฟ่, ตลาดนัด (unknown) |
+| huahin | 6.3 km | 6.0 km | ตลาดฉัตรไชย, ร้านปักเป้า (unknown) |
+| amphawa | 5.6 km | 7.1 km | กาญจนาพานิช (unknown), Café 24th November (07:00-17:30) |
+| banmai | 7.1 km | 9.4 km | ตลดบ่อบัว, ตลาดทรัพย์สินพระมหากษัตริย์ (unknown) |
+| ayutthaya | 2.6 km | 3.1 km | โทนี่ เพลส, บ้านข้าวหนม (unknown) |
+
+Legs over 15 km: 52 before, 3 after. The 3 left:
+- Suan Phueng: Victory House → เวเนโต้ สวนผึ้ง 17.2 km, วัดท่ามะขาม → Victory House 16.0 km. OSM has only 23 places within 14 km; all hotels are ~10 km east of the town and the restaurants are west. A fresh Overpass query at the same radius returned 26 elements, so I did **not** replace `tools/raw/suanphueng.json`. Fix needs real hotels near the restaurants (add them by hand or from partner hotels).
+- Chao Samran: คุณแอ๊ว (breakfast) → วัดพิกุลแก้ว 17.7 km. Both slots are already down to one option, so the pass cannot drop either.
+
+Still open:
+- Ban Mai day-2 lunch (`d2d`) is still a temple (same as on `main`): no unused restaurant is left in its 32 places.
+- Several slots now have one option instead of two (Suan Phueng d1a, d1b, d1c, d1d, d2b; Nakhon Nayok d2a, d2b; Chao Samran d2a, d2b, d2c; Ban Mai d1e, d2d), which means less variety on "สุ่มใหม่".
+- Sunrise slot (`d2a`) can pick a night market (Khao Yai: ตีนเขา ไนท์มาร์เก็ต at 05:59). Not changed in this task; it could drop markets whose name has "ไนท์"/"night".
+- Opening hours: weekday rules are ignored, and most places have no hours, so they still need checking via `docs/checklist.csv`.
+
 ## Change log
 
 - 2026-10-23 13:45 +07 [Agent A] Moved the repository to `nippich321/suumtrip` (public, GitHub Pages from `main`). README rewritten in formal English. Created this file with the roles of Agent A (owner's AI, lead) and Agent B (friend's AI) and the rule to check this file at the start of every task. Open work list above comes from a local click-through; nothing in the site code was changed.
 - 2026-10-23 14:02 +07 [Agent A] Added the task section for Agent B (near-hotel places and opening hours, branch `agent-b/near-hotel`). Committed `tools/raw/` (Overpass responses and OSRM route cache, 1.1 MB) and removed it from `.gitignore` so both agents build from the same input. Agent A now takes Open work items 1, 3 and 5 in `js/itinerary.js` and `js/app.js`. No site code changed in this commit.
 - 2026-10-23 14:04 +07 [Agent A] Added the rule that Agent B first explains the project and each task to its own user in Thai and asks for agreement before starting.
+- 2026-10-23 14:50 +07 [Agent B] Near-hotel task done on `agent-b/near-hotel`: distance limits, hotel pair limit, road-leg pass, opening-hours and breakfast rules in `tools/build_data.py`; new `tools/check_data.py`; regenerated `data/destinations.json`, `docs/checklist.csv`, new routes in `tools/raw/routes.json`. Legs over 15 km 52 → 3 (see report section). Did not re-run `fetch_pois.py` (Overpass mostly down; a test query for Suan Phueng gave 26 vs 23 elements). Clicked through locally (`python -m http.server 5173`): Nature → เขาใหญ่, Sea → หาดเจ้าสำราญ, Old Town → ตลาดบ้านใหม่, no console errors. Not tested: the other six trips in the browser (checked only by `check_data.py`), and transport modes other than public transport. Open: see report section.

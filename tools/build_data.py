@@ -8,6 +8,8 @@ import json
 import math
 import pathlib
 import random
+import re
+import sys
 import time
 import urllib.request
 
@@ -48,10 +50,77 @@ SLOTS = [
     dict(id="d1d", day=1, time="sunset", label="ชมพระอาทิตย์ตก", kinds=["beach", "view", "park", "temple", "sight"], ranked=True),
     dict(id="d1e", day=1, time="19:00", label="มื้อเย็น", kinds=["food"]),
     dict(id="d2a", day=2, time="sunrise", label="เช้าตรู่", kinds=["view", "beach", "temple", "market", "park"], ranked=True),
-    dict(id="d2b", day=2, time="08:30", label="อาหารเช้า", kinds=["cafe", "food"]),
+    dict(id="d2b", day=2, time="08:30", label="อาหารเช้า", kinds=["cafe", "food", "market"]),
     dict(id="d2c", day=2, time="10:00", label="ช่วงสาย", kinds=["sight", "museum", "market", "temple", "waterfall", "park"]),
     dict(id="d2d", day=2, time="12:00", label="มื้อกลางวัน", kinds=["food"]),
 ]
+
+# Straight-line km from the hotel midpoint (anchor). Meals and cafés stay close; a slot
+# that cannot fill both options inside its limit is widened by WIDEN_STEP_KM at a time.
+MAX_KM_MEAL = 5
+MAX_KM_SIGHT = 8
+WIDEN_STEP_KM = 3
+WIDEN_MAX_STEPS = 4
+MAX_LEG_KM = 10  # straight-line km to the previous / next stop (roads add about a third)
+MAX_ROAD_KM = 15  # final check on the real road legs
+HOTEL_PAIR_KM = 4  # the two hotel options must be this close, so the anchor is near both
+MEAL_KINDS = {"cafe", "food"}
+
+# Breakfast (d2b): skip places whose cuisine or name does not fit a morning meal.
+NOT_BREAKFAST = ("pizza", "พิซซ่า", "bar", "บาร์", "barbecue", "bbq", "บาร์บีคิว", "ปิ้งย่าง",
+                 "หมูกะทะ", "mookata", "หมูจุ่ม", "ชาบู", "shabu", "สุกี้", "steak", "สเต็ก", "สเต๊ก",
+                 "buffet", "บุฟเฟ่ต์", "บุฟเฟต์", "seafood", "ซีฟู้ด", "อาหารทะเล", "ice_cream",
+                 "ไอศกรีม", "ไอติม", "beer", "เบียร์", "pub", "ผับ", "ร้านเหล้า",
+                 "italian", "pasta", "อิตาเลียน", "wine", "ไวน์")
+BREAKFAST_LIKE = ("coffee", "cafe", "bakery", "cake", "breakfast", "noodle", "congee", "rice",
+                  "sandwich", "pancake", "กาแฟ", "คาเฟ่", "เบเกอรี่", "โจ๊ก", "ข้าวต้ม", "ก๋วยเตี๋ยว",
+                  "ก๊วยเตี๋ยว", "เตี๋ยว", "บะหมี่", "ปาท่องโก๋", "ติ่มซำ", "ขนมปัง", "ข้าวมันไก่", "ข้าวแกง")
+
+
+def to_min(hhmm):
+    h, m = hhmm.strip().split(":")
+    return int(h) * 60 + int(m)
+
+
+def parse_hours(text):
+    """Opening ranges in minutes from an OSM opening_hours value, or None if unknown.
+
+    Handles the common forms seen in tools/raw, e.g. "Mo-Su 07:00-17:00",
+    "10:00-14:00,16:00-21:00", "Mo-Fr 11:00-21:00; Sa,Su 10:00-21:00", "24/7".
+    Weekdays are ignored (the trip date is not known here), so a place counts as
+    open at a time if any of its ranges covers it.
+    """
+    if not text:
+        return None
+    if text.strip() == "24/7":
+        return [(0, 24 * 60)]
+    ranges = []
+    for rule in text.split(";"):
+        for part in re.findall(r"(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})", rule):
+            start, end = to_min(part[0]), to_min(part[1])
+            if end <= start:  # closes after midnight
+                end += 24 * 60
+            ranges.append((start, end))
+    return ranges or None
+
+
+def open_at(p, hhmm, stay_min=45):
+    """True / False when the hours are known, None when unknown."""
+    ranges = parse_hours(p["hours"])
+    if ranges is None:
+        return None
+    t = to_min(hhmm)
+    return any(s <= t and t + stay_min <= e for s, e in ranges)
+
+
+def fits_breakfast(p):
+    text = f"{p['name']} {p['nameEn'] or ''} {p['cuisine'] or ''}".lower()
+    return not any(w in text for w in NOT_BREAKFAST)
+
+
+def breakfast_like(p):
+    text = f"{p['name']} {p['nameEn'] or ''} {p['cuisine'] or ''}".lower()
+    return p["kind"] in ("cafe", "market") or any(w in text for w in BREAKFAST_LIKE)
 
 
 def classify(tags):
@@ -110,9 +179,13 @@ def load_pois(dest):
             nameEn=tags.get("name:en") or (tags.get("name") if tags.get("name") != name else None),
             kind=kind, lon=round(lon, 6), lat=round(lat, 6),
             stars=tags.get("stars"), tourism=tags.get("tourism"),
-            hours=tags.get("opening_hours"),
+            hours=tags.get("opening_hours"), cuisine=tags.get("cuisine"),
         ))
     return pois
+
+
+# keys written to data/destinations.json for each place (cuisine is used only here)
+POI_KEYS = ("id", "name", "nameEn", "kind", "lon", "lat", "stars", "tourism", "hours")
 
 
 CHAINS = ("amazon", "อเมซอน", "starbucks", "swensen", "kfc", "mcdonald", "7-eleven", "เซเว่น",
@@ -139,14 +212,22 @@ def rank(anchor, p):
     return dist_km(anchor, (p["lon"], p["lat"])) + 1.5 * thai_first(p)
 
 
-def choose_options(pool, kinds, anchor, used, rng, n=2, prefer=None, ranked=False):
-    cands = [p for p in pool if p["kind"] in kinds and p["id"] not in used]
+def candidates(pool, kinds, anchor, used, max_km=None, accept=None):
+    return [p for p in pool if p["kind"] in kinds and p["id"] not in used
+            and (accept is None or accept(p))
+            and (max_km is None or dist_km(anchor, (p["lon"], p["lat"])) <= max_km)]
+
+
+def choose_options(pool, kinds, anchor, used, rng, n=2, prefer=None, ranked=False,
+                   max_km=None, accept=None):
+    cands = candidates(pool, kinds, anchor, used, max_km, accept)
     if prefer:
         pref = [p for p in cands if prefer(p)]
         if len(pref) >= n:
             cands = pref
     if ranked:  # earlier kinds win if they are within reach
-        near = sorted((p for p in cands if dist_km(anchor, (p["lon"], p["lat"])) < 12),
+        reach = max_km or 12
+        near = sorted((p for p in cands if dist_km(anchor, (p["lon"], p["lat"])) <= reach),
                       key=lambda p: dist_km(anchor, (p["lon"], p["lat"])))
         for k in kinds:
             best = [p for p in near if p["kind"] == k]
@@ -234,30 +315,79 @@ def build(dest_id, meta):
     center = meta["center"]
     used = set()
     is_resort = (lambda p: p["tourism"] == "resort") if meta["gold"] else None
-    hotels = choose_options(pool, ["stay"], center, used, rng, prefer=is_resort)
+
+    def near_km(kinds, near, limit, accept=None, n=2):
+        """Smallest limit (widened step by step) that has n candidates, and the steps taken."""
+        for step in range(WIDEN_MAX_STEPS + 1):
+            km = limit + step * WIDEN_STEP_KM
+            if len(candidates(pool, kinds, near, used, km, accept)) >= n:
+                return km, step
+        return km, WIDEN_MAX_STEPS
+
+    hotels = choose_options(pool, ["stay"], center, used, rng, n=1, prefer=is_resort)
     if not hotels:
         raise SystemExit(f"{dest_id}: no hotels found")
+    first = (hotels[0]["lon"], hotels[0]["lat"])
+    km, _ = near_km(["stay"], first, HOTEL_PAIR_KM, n=1)
+    hotels += choose_options(pool, ["stay"], first, used, rng, n=1, prefer=is_resort, max_km=km)
     anchor = (sum(h["lon"] for h in hotels) / len(hotels), sum(h["lat"] for h in hotels) / len(hotels))
+    notes = []
+    if km > HOTEL_PAIR_KM:
+        notes.append(f"hotel pair widened to {km} km")
     slots = []
-    for s in SLOTS:
+    prev = [center]  # day 1 starts in the town centre (ARRIVE)
+    hotel_pts = [(h["lon"], h["lat"]) for h in hotels]
+    for i, s in enumerate(SLOTS):
         if s["id"] == "hotel":
             opts = hotels
         else:
-            opts = choose_options(pool, s["kinds"], anchor, used, rng, ranked=s.get("ranked", False))
+            meal = any(k in MEAL_KINDS for k in s["kinds"])
+            fits = None
+            if meal and ":" in s["time"]:
+                def fits(p, s=s):
+                    return open_at(p, s["time"]) is not False and (s["id"] != "d2b" or fits_breakfast(p))
+            prefer = breakfast_like if s["id"] == "d2b" else None
+            # every option must be within reach of each place the traveller comes from or goes to next
+            neighbours = list(prev)
+            if s["id"] in ("d1c", "d1e", "d2a"):  # check-in and the night are at the hotel
+                neighbours += hotel_pts
+            if i == len(SLOTS) - 1:  # then back to the town centre
+                neighbours.append(center)
+            limit = MAX_KM_MEAL if meal else MAX_KM_SIGHT
+            # widen the area first, then settle for one option, and only then allow longer legs
+            tries = [(MAX_LEG_KM + ls * WIDEN_STEP_KM, limit + ks * WIDEN_STEP_KM, n)
+                     for ls in range(WIDEN_MAX_STEPS + 1) for n in (2, 1)
+                     for ks in range(WIDEN_MAX_STEPS + 1)]
+            for step, (leg_km, km, n) in enumerate(tries):
+
+                def accept(p, fits=fits, leg_km=leg_km, neighbours=neighbours):
+                    return ((fits is None or fits(p)) and
+                            all(dist_km(q, (p["lon"], p["lat"])) <= leg_km for q in neighbours))
+                if len(candidates(pool, s["kinds"], anchor, used, km, accept)) >= n:
+                    break
+            opts = choose_options(pool, s["kinds"], anchor, used, rng, n=n, ranked=s.get("ranked", False),
+                                  max_km=km, accept=accept, prefer=prefer)
+            if not opts and meal:  # a meal anywhere in the destination beats a sight at mealtime
+                opts = choose_options(pool, s["kinds"], anchor, used, rng, n=1, accept=fits)
+                if opts:
+                    notes.append(f"{s['id']} filled from the whole destination")
             if not opts:  # widen to any sight-like place
-                opts = choose_options(pool, ["sight", "temple", "park", "market", "view", "museum"], anchor, used, rng)
+                opts = choose_options(pool, ["sight", "temple", "park", "market", "view", "museum"],
+                                      anchor, used, rng, max_km=km)
+                notes.append(f"{s['id']} filled with sights")
+            if step:
+                notes.append(f"{s['id']} widened to {km} km, legs {leg_km} km, {n} option(s)")
+        prev = [(p["lon"], p["lat"]) for p in opts] or prev
+        if s["id"] == "d1e":
+            prev = hotel_pts
         if opts:
             slots.append(dict(s, options=[p["id"] for p in opts]))
-    pois = {p["id"]: p for p in pool if p["id"] in used}
+    by_id = {p["id"]: p for p in pool}
 
-    def pt(pid):
-        return (pois[pid]["lon"], pois[pid]["lat"])
+    def coord(pid):
+        return center if pid == "ARRIVE" else (by_id[pid]["lon"], by_id[pid]["lat"])
 
-    legs = {}
-    arrive = route(ORIGIN, center, "drive")
-    legs["ORIGIN>ARRIVE"] = arrive
-
-    # sequence of option lists between which legs are needed
+    # sequence of option lists between which legs are needed (the lists are the slots' own)
     seq = [["ARRIVE"]]
     for s in slots:
         if s["id"] == "d2a":  # day 2 starts from the hotel
@@ -267,9 +397,33 @@ def build(dest_id, meta):
             seq.append(slots_by(slots, "hotel"))
     seq.append(["ARRIVE"])
 
-    def coord(pid):
-        return center if pid == "ARRIVE" else pt(pid)
+    # The limits above are straight-line; drop options whose real road leg to a neighbouring
+    # stop is longer than MAX_ROAD_KM, worst first, as long as the slot keeps one option.
+    owner = {pid: s for s in slots for pid in s["options"]}
+    while True:
+        bad = {}
+        for A, B in zip(seq, seq[1:]):
+            for a in A:
+                for b in B:
+                    if a != b and leg(coord(a), coord(b))["m"] > MAX_ROAD_KM * 1000:
+                        for pid in (a, b):
+                            if pid in owner and len(owner[pid]["options"]) > 1:
+                                bad[pid] = bad.get(pid, 0) + 1
+        if not bad:
+            break
+        pid = max(bad, key=bad.get)
+        owner[pid]["options"].remove(pid)
+        notes.append(f"dropped {by_id[pid]['name']} from {owner[pid]['id']} (road leg over {MAX_ROAD_KM} km)")
 
+    for s in slots:
+        if s["id"] != "hotel" and any(k in MEAL_KINDS for k in s["kinds"]) and ":" in s["time"]:
+            STATS["meal_options"] += len(s["options"])
+            STATS["unknown_hours"] += sum(open_at(by_id[pid], s["time"]) is None for pid in s["options"])
+    pois = {pid: {k: by_id[pid][k] for k in POI_KEYS} for s in slots for pid in s["options"]}
+    if notes:
+        print(f"  {dest_id}: " + "; ".join(notes), flush=True)
+
+    legs = {"ORIGIN>ARRIVE": route(ORIGIN, center, "drive")}
     for A, B in zip(seq, seq[1:]):
         for a in A:
             for b in B:
@@ -284,6 +438,9 @@ def build(dest_id, meta):
                 placeCount=len(pool))
 
 
+STATS = dict(meal_options=0, unknown_hours=0)
+
+
 def slots_by(slots, sid):
     for s in slots:
         if s["id"] == sid:
@@ -292,6 +449,7 @@ def slots_by(slots, sid):
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")
     out = []
     for dest_id, meta in DESTS.items():
         if not (RAW / f"{dest_id}.json").exists():
@@ -302,6 +460,7 @@ def main():
     OUT.write_text(json.dumps(dict(origin=list(ORIGIN), destinations=out), ensure_ascii=False),
                    encoding="utf-8")
     print(f"wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
+    print(f"meal/cafe options: {STATS['meal_options']}, opening hours unknown: {STATS['unknown_hours']}")
     write_checklist(out)
 
 

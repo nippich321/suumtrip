@@ -62,6 +62,8 @@ function legCost(vehicle, meters) {
 
 const MODE = { train: { label: 'รถไฟ', icon: 'ti-train' }, van: { label: 'รถตู้', icon: 'ti-bus' }, bus: { label: 'รถบัส', icon: 'ti-bus' } };
 const TRANSFER = { label: 'สองแถว/แท็กซี่', icon: 'ti-car' };
+// data/schedules.json may name the mode in Thai (as on the check sheet); the code uses English
+const MODE_KEY = { รถไฟ: 'train', 'รถตู้/มินิบัส': 'van', รถตู้: 'van', รถบัส: 'bus', รถทัวร์: 'bus' };
 
 // Confirmed public-transport departures (data/schedules.json) running on this date, as
 // minutes after midnight. A row with `last` repeats every `every` minutes; without
@@ -70,7 +72,9 @@ function departures(rows, date) {
   const g = new Date(date).getDay();
   const weekend = g === 0 || g === 6;
   const out = [];
-  for (const r of rows || []) {
+  for (const raw of rows || []) {
+    const r = MODE_KEY[raw.mode] ? { ...raw, mode: MODE_KEY[raw.mode] } : raw;
+    if (!MODE[r.mode]) continue; // a mode the site cannot show
     if ((r.days === 'weekday' && weekend) || (r.days === 'weekend' && !weekend)) continue;
     const dep = toMin(r.depart);
     const dur = r.arrive ? (toMin(r.arrive) - dep + 1440) % 1440 : null;

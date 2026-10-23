@@ -35,6 +35,7 @@ const peopleText = () => `ผู้ใหญ่ ${S.who.adults}${S.who.kids ? ` 
 const thaiDate = (iso) => new Date(iso).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
 
 const WIZ = [
+  { id: 'home', label: 'หน้าแรก', value: () => '' },
   { id: 'cat', label: 'แนวทริป', value: () => CATEGORIES[S.cat].label },
   { id: 'who', label: 'ผู้เดินทาง', value: () => peopleText() },
   { id: 'choose', label: 'วิธีเดินทาง', value: () => TRANSPORT[S.transport].label },
@@ -614,7 +615,7 @@ function renderGift() {
 // ---------- router ----------
 function go(name) { location.hash = name; }
 function route() {
-  const name = location.hash.slice(1) || 'cat';
+  const name = location.hash.slice(1) || 'home';
   if (name !== 'trip') { tripMap?.destroy(); tripMap = null; planner?.destroy(); planner = null; }
   (screens[name] || screens.home)();
   window.scrollTo(0, 0);

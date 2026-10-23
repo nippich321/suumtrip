@@ -35,7 +35,6 @@ const peopleText = () => `ผู้ใหญ่ ${S.who.adults}${S.who.kids ? ` 
 const thaiDate = (iso) => new Date(iso).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
 
 const WIZ = [
-  { id: 'home', label: 'หน้าแรก', value: () => '' },
   { id: 'cat', label: 'แนวทริป', value: () => CATEGORIES[S.cat].label },
   { id: 'who', label: 'ผู้เดินทาง', value: () => peopleText() },
   { id: 'choose', label: 'วิธีเดินทาง', value: () => TRANSPORT[S.transport].label },
@@ -77,7 +76,11 @@ function wizard(id, body, still = false) {
     </section>`;
 }
 
-const nextBtn = (to, label = 'ต่อไป') => `<div class="wiz-next">${WIZ.findIndex((w) => w.id === to) > 0 ? `<a class="btn btn-ghost" href="#${WIZ[WIZ.findIndex((w) => w.id === to) - 1].id}">ย้อนกลับ</a>` : ''}<a class="btn btn-primary" href="#${to}">${label}</a></div>`;
+// "back" goes to the step before the current page (the one before `to`); the first step has none
+const nextBtn = (to, label = 'ต่อไป') => {
+  const prev = WIZ[WIZ.findIndex((w) => w.id === to) - 2];
+  return `<div class="wiz-next">${prev ? `<a class="btn btn-ghost" href="#${prev.id}">ย้อนกลับ</a>` : ''}<a class="btn btn-primary" href="#${to}">${label}</a></div>`;
+};
 
 function steps(n) {
   return `<div class="steps" aria-label="ขั้นที่ ${n} จาก 5">${[1, 2, 3, 4, 5].map((i) => `<span class="${i <= n ? 'on' : ''}"></span>`).join('')}</div>`;
@@ -117,7 +120,7 @@ const screens = {
       ${boxHtml('hero-box')}
       <h1>เลือกแค่แนว<br><span>ที่เหลือกล่องจัดให้</span></h1>
       <p>กล่องสุ่มทริป 2 วัน 1 คืน ตั้งแต่ออกจากบ้าน ที่พัก ร้านอาหาร ที่เที่ยว จนกลับถึงบ้าน ในราคาที่ถูกกว่าจองเอง</p>
-      <a class="btn btn-primary" href="#choose"><i class="ti ti-gift"></i> สุ่มทริปของฉัน · เริ่ม ${fmt(CONFIG.prices.weekday)} บาท</a>
+      <a class="btn btn-primary" href="#cat"><i class="ti ti-gift"></i> สุ่มทริปของฉัน · เริ่ม ${fmt(CONFIG.prices.weekday)} บาท</a>
       <div class="how">
         <div><i class="ti ti-adjustments-horizontal"></i>เลือกแนว<br>วัน และการเดินทาง</div>
         <div><i class="ti ti-gift"></i>จ่ายแล้ว<br>เปิดกล่องลุ้น</div>

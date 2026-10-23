@@ -92,6 +92,18 @@ function pickRun(runs, want, before, lead = () => 0) {
   return pickFrom(fixed, want, before, lead) || pickFrom(runs.filter((r) => r.until != null), want, before, lead);
 }
 
+// Trains first (owner's decision): the train that fits, else any run; on the way back a
+// train is taken unless another run leaves more than two hours earlier.
+function pickTrainFirst(runs, want, before, lead) {
+  const train = pickRun(runs.filter((r) => r.row.mode === 'train'), want, before, lead);
+  const any = pickRun(runs, want, before, lead);
+  if (!train) return any;
+  if (!before && any && train.dep - any.dep > 120) return any;
+  return train;
+}
+
+const HOTEL_MIN = 20; // leave the bags (or check in) at the hotel on arrival
+
 function pickFrom(runs, want, before, lead) {
   const goal = (r) => (before ? want - lead(r) : want);
   const at = (r) => (r.until != null ? Math.min(Math.max(goal(r), r.dep), r.until) : r.dep);
@@ -147,6 +159,13 @@ export function buildTrip(dest, opts) {
   const WAIT = 'รอทีมงานยืนยันเวลารถ เวลาในแผนนี้เป็นการประมาณ';
   const runSub = (r, verb) => `${MODE[r.row.mode].label} ${r.row.operator} · ${verb} ${r.row.board}`
     + (r.until != null ? ` (ไม่มีรอบแน่นอน มีรถระหว่าง ${r.row.depart}–${r.row.last})` : '');
+  // where a run's time comes from, shown under it
+  const runSrc = (r) => {
+    if (!r) return null;
+    const got = /(\d{4})-(\d{2})-(\d{2})/.exec(r.row.source || '');
+    const when = got ? ` (ดึงเมื่อ ${new Date(`${got[0]}T12:00:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })})` : '';
+    return r.row.mode === 'train' ? `ตามตารางเดินรถของการรถไฟฯ${when} เช็กอีกครั้งก่อนเดินทาง` : `ตารางรถจากแหล่งข้อมูลที่ทีมงานตรวจแล้ว${when}`;
+  };
 
   // A train to a station far from the destination needs a songthaew/taxi ride (plus a wait).
   const station = (run) => (run?.row.mode === 'train' && transfer ? transfer : null);
@@ -156,17 +175,23 @@ export function buildTrip(dest, opts) {
   // first stop in time (30 minutes to spare), counting the ride from the station
   let clock = toMin('07:00');
   let day = 1;
-  const firstAt = /:/.test(dest.slots[0].time) ? toMin(dest.slots[0].time) : toMin('10:30');
+  // the first stop with a clock time, less the bag drop at the hotel when that comes first
+  const timed = dest.slots.find((sl) => /:/.test(sl.time));
+  const hotelFirst = dest.slots[0]?.id === 'hotel';
+  const toHotel = getLeg('ARRIVE', chosen.hotel);
+  const firstAt = (timed ? toMin(timed.time) : toMin('10:30'))
+    - (hotelFirst ? HOTEL_MIN + (toHotel ? (toHotel.sec * 1.15) / 60 : 15) : 0);
   const estimate = (longLeg.sec * 1.3) / 60 + 20;
   const lead = (r) => (r.dur ?? estimate) + (station(r) ? rideMin : 0);
   // none in time: the one that gets there first
   const soonest = outRuns.length ? outRuns.reduce((a, b) => (b.dep + lead(b) < a.dep + lead(a) ? b : a)) : null;
-  const outRun = pickRun(outRuns, firstAt - 30, true, lead) || soonest;
+  // 30 minutes to spare, or 10 when the bag drop at the hotel (itself flexible) comes first
+  const outRun = pickTrainFirst(outRuns, firstAt - (hotelFirst ? 10 : 30), true, lead) || soonest;
   if (outRun) clock = outRun.dep;
   if (!pub && drive) clock = drive.depart;
   items.push({ type: 'start', day, time: clock, name: 'ออกเดินทางจากกรุงเทพฯ',
     sub: !pub ? 'ขับรถออกจากบ้าน' : outRun ? runSub(outRun, 'ขึ้นที่') : `ขึ้นรถตู้ที่${dest.terminal}`,
-    warn: pub && !outRun ? WAIT : null });
+    src: runSrc(outRun), warn: pub && !outRun ? WAIT : null });
   const outVia = station(outRun);
   clock = !pub && drive ? pushDrive(drive.out, 'ORIGIN', 'ARRIVE', clock, 1)
     : pushLeg('ORIGIN', 'ARRIVE', outVia ? outVia.fromBangkok : longLeg, clock, true, false, outRun);
@@ -184,11 +209,12 @@ export function buildTrip(dest, opts) {
     let at;
     if (slot.time === 'sunset') at = (slot.day === 1 ? sun1 : sun2).sunset - 30;
     else if (slot.time === 'sunrise') at = (slot.day === 1 ? sun1 : sun2).sunrise - 10;
+    else if (slot.time === 'arrive') at = clock; // straight there, no waiting
     else at = toMin(slot.time);
     const legEnd = pushLeg(prev, poiId, getLeg(prev, poiId), Math.max(clock, at - 30), false, false);
     const time = Math.max(at, legEnd);
     items.push({ type: 'stop', day: slot.day, time, slot, poi, sun: slot.time });
-    clock = time + (slot.id === 'hotel' ? 45 : 60);
+    clock = time + (slot.id === 'hotel' ? (slot.time === 'arrive' ? HOTEL_MIN : 45) : 60);
     prev = poiId;
   };
 
@@ -205,19 +231,33 @@ export function buildTrip(dest, opts) {
     visit(slot, chosen[slot.id]);
   }
 
-  // head home: not before 14:00, or with a timetable, on the first run from 13:30 that we can
-  // reach (10 minutes to buy a ticket, plus the ride to a far-away station)
-  if (!backRuns.length) clock = Math.max(clock, toMin('14:00'));
-  const backLeg = getLeg(prev, 'ARRIVE');
-  clock = pushLeg(prev, 'ARRIVE', backLeg, clock, false, false);
-  const firstBack = pickRun(backRuns, Math.max(clock + 10, toMin('13:30')), false);
-  const backRun = station(firstBack) ? pickRun(backRuns, Math.max(clock + rideMin + 10, toMin('13:30')), false) : firstBack;
+  // Head home: not before 14:00, or with a timetable, on the first run from 13:30 that we can
+  // reach (10 minutes to buy a ticket, plus the ride to a far-away station).
+  // By public transport the bags were left at the hotel after checking out: pick them up on
+  // the way to the station, as late as the run home allows (free time before, not with bags).
+  const hotel = chosen.hotel;
+  const bags = pub && hotelFirst && prev !== hotel && getLeg(prev, hotel) && getLeg(hotel, 'ARRIVE');
+  const legMin = (l) => (!l ? 0 : (l.mode === 'walk' ? l.sec : l.sec * 1.15) / 60);
+  const toTown = bags ? legMin(getLeg(prev, hotel)) + 10 + legMin(getLeg(hotel, 'ARRIVE')) : legMin(getLeg(prev, 'ARRIVE'));
+  const inTown = clock + toTown; // the earliest we can be back at the station / town centre
+  const firstBack = pickTrainFirst(backRuns, Math.max(inTown + 10, toMin('13:30')), false);
+  const backRun = station(firstBack) ? pickTrainFirst(backRuns, Math.max(inTown + rideMin + 10, toMin('13:30')), false) : firstBack;
+  if (backRun) clock = Math.max(clock, backRun.dep - 10 - (station(backRun) ? rideMin : 0) - toTown);
+  else if (!backRuns.length) clock = Math.max(clock, toMin('14:00') - toTown);
+  if (bags) {
+    clock = pushLeg(prev, hotel, getLeg(prev, hotel), clock, false, false);
+    items.push({ type: 'bags', day: 2, time: clock, name: 'รับกระเป๋าที่ที่พัก', poi: dest.pois[hotel],
+      sub: `${dest.pois[hotel].name} · เช็กเอาต์ตอนเช้าแล้วฝากกระเป๋าไว้ (ถามที่พักก่อนว่ารับฝากไหม)` });
+    clock += 10;
+    prev = hotel;
+  }
+  clock = pushLeg(prev, 'ARRIVE', getLeg(prev, 'ARRIVE'), clock, false, false);
   const backVia = station(backRun);
   if (backVia) clock = pushLeg('ARRIVE', 'STATION', backVia.fromTown, clock + 10, false, false, null, TRANSFER);
   if (backRun) clock = backRun.dep;
   items.push({ type: 'depart', day: 2, time: clock,
     name: !pub ? 'ขับรถกลับกรุงเทพฯ' : backRun ? `ขึ้น${MODE[backRun.row.mode].label}กลับกรุงเทพฯ` : `ขึ้นรถตู้กลับ${dest.terminal.replace('สถานีขนส่ง', 'ขนส่ง')}`,
-    sub: backRun ? `${runSub(backRun, 'ที่')} · ถึง ${backRun.row.alight}` : dest.name,
+    sub: backRun ? `${runSub(backRun, 'ที่')} · ถึง ${backRun.row.alight}` : dest.name, src: runSrc(backRun),
     warn: pub && !backRun ? (backRuns.length ? 'ไม่มีรอบกลับที่ยืนยันแล้วหลังเวลานี้ ต้องเช็กรอบรถกับทีมงาน' : WAIT) : null });
   clock = !pub && drive ? pushDrive(drive.back, 'ARRIVE', 'ORIGIN', clock, 2)
     : pushLeg('ARRIVE', 'ORIGIN', backVia ? backVia.fromBangkok : longLeg, clock, true, true, backRun);

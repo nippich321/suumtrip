@@ -5,8 +5,8 @@ Usage: python -I tools/fetch_schedules.py
 Writes tools/raw/schedules_srt.json: for every destination station and every Bangkok station
 that has trains to it, both directions, each train's
 number, type, departure, arrival, duration and the railway's own note (service days,
-fares, start date). These are not confirmed yet: tools/build_schedules.py turns them into
-docs/schedules.csv for the team to check, and only ticked rows reach the site.
+fares, start date). tools/build_schedules.py puts them on docs/schedules.csv and, being the
+railway's own timetable, on the site (labelled with the date they were fetched).
 """
 import datetime
 import html
@@ -31,6 +31,13 @@ ROUTES = {
     "khaoyai": "2093",      # ปากช่อง
     "chaosamran": "4101",   # เพชรบุรี
     "huahin": "4118",       # หัวหิน
+    # train destinations added 2026-10-23
+    "kanchanaburi": "4057",  # กาญจนบุรี
+    "nakhonpathom": "4016",  # นครปฐม
+    "ratchaburi": "4089",    # ราชบุรี
+    "phetchaburi": "4101",   # เพชรบุรี
+    "chaam": "4111",         # ชะอำ
+    "pattaya": "3041",       # พัทยา
 }
 # Where the stations are (OpenStreetMap, looked up with Nominatim on 2026-10-23), so a trip
 # can add the ride from the station to the destination when they are far apart.
@@ -38,6 +45,8 @@ STATIONS = {
     "1000": (100.541865, 13.803976), "1001": (100.517003, 13.740669), "4002": (100.479044, 13.760588),
     "1031": (100.582953, 14.356707), "3023": (101.058881, 13.695576), "2093": (101.410591, 14.705048),
     "4101": (99.941500, 13.115895), "4118": (99.955171, 12.564624),
+    "4057": (99.525611, 14.034206), "4016": (100.058270, 13.824290), "4089": (99.824061, 13.529865),
+    "4111": (99.966243, 12.799827), "3041": (100.909418, 12.940201),
 }
 
 

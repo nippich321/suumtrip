@@ -25,6 +25,13 @@ DESTS = {
     "amphawa": (13.425, 99.955, 7000),
     "banmai": (13.690, 101.070, 6000),
     "ayutthaya": (14.355, 100.568, 6000),
+    # train destinations added 2026-10-23 (centred on the station, or the town for Pattaya)
+    "kanchanaburi": (14.034, 99.522, 7000),
+    "nakhonpathom": (13.824, 100.058, 5000),
+    "ratchaburi": (13.530, 99.824, 6000),
+    "phetchaburi": (13.116, 99.941, 6000),
+    "chaam": (12.800, 99.966, 6000),
+    "pattaya": (12.935, 100.880, 5000),
 }
 
 ENDPOINTS = [

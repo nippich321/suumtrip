@@ -4,6 +4,7 @@ Usage: python -I tools/build_data.py
 Reads tools/raw/<dest>.json, calls the public OSRM routers for walking and
 driving legs (cached in tools/raw/routes.json), writes data/destinations.json.
 """
+import difflib
 import json
 import math
 import pathlib
@@ -51,7 +52,8 @@ SLOTS = [
     dict(id="d1e", day=1, time="19:00", label="มื้อเย็น", kinds=["food"]),
     dict(id="d2a", day=2, time="sunrise", label="เช้าตรู่", kinds=["view", "beach", "temple", "market", "park"], ranked=True),
     dict(id="d2b", day=2, time="08:30", label="อาหารเช้า", kinds=["cafe", "food", "market"]),
-    dict(id="d2c", day=2, time="10:00", label="ช่วงสาย", kinds=["sight", "museum", "market", "temple", "waterfall", "park"]),
+    dict(id="d2c", day=2, time="10:00", label="ช่วงสาย",
+         kinds=["sight", "museum", "market", "temple", "waterfall", "park", "beach", "view"]),
     dict(id="d2d", day=2, time="12:00", label="มื้อกลางวัน", kinds=["food"]),
 ]
 
@@ -63,6 +65,7 @@ WIDEN_STEP_KM = 3
 WIDEN_MAX_STEPS = 4
 MAX_LEG_KM = 10  # straight-line km to the previous / next stop (roads add about a third)
 MAX_ROAD_KM = 15  # final check on the real road legs
+HOTEL_FROM_CENTER_KM = 15  # hotels go where places are densest, but stay this close to town
 HOTEL_PAIR_KM = 4  # the two hotel options must be this close, so the anchor is near both
 MEAL_KINDS = {"cafe", "food"}
 
@@ -75,6 +78,14 @@ NOT_BREAKFAST = ("pizza", "พิซซ่า", "bar", "บาร์", "barbecue
 BREAKFAST_LIKE = ("coffee", "cafe", "bakery", "cake", "breakfast", "noodle", "congee", "rice",
                   "sandwich", "pancake", "กาแฟ", "คาเฟ่", "เบเกอรี่", "โจ๊ก", "ข้าวต้ม", "ก๋วยเตี๋ยว",
                   "ก๊วยเตี๋ยว", "เตี๋ยว", "บะหมี่", "ปาท่องโก๋", "ติ่มซำ", "ขนมปัง", "ข้าวมันไก่", "ข้าวแกง")
+
+
+# Places that do not fit a daytime, sunrise or sunset visit, cafés posing as sights, and
+# names too generic to find on Google Maps.
+NIGHT_PLACE = re.compile(r"ไนท์|night|โต้รุ่ง|ถนนคนเดิน|walking street", re.I)
+CAFE_NAME = re.compile(r"คาเฟ่|cafe|café|coffee|กาแฟ", re.I)
+GENERIC_SIGHT = re.compile(r"^(wat|temple|park|viewpoint|recreation ground|จุดชมวิว\s*\d*|วัด|สวน)$", re.I)
+SUN_TIMES = {"sunrise": "06:00", "sunset": "17:30"}  # close enough for an opening-hours check
 
 
 def to_min(hhmm):
@@ -116,6 +127,18 @@ def open_at(p, hhmm, stay_min=45):
 def fits_breakfast(p):
     text = f"{p['name']} {p['nameEn'] or ''} {p['cuisine'] or ''}".lower()
     return not any(w in text for w in NOT_BREAKFAST)
+
+
+def fits_slot(p, s):
+    """Whether place p suits slot s at its time of day (unknown opening hours count as open)."""
+    sun = s["time"] in SUN_TIMES
+    if open_at(p, SUN_TIMES.get(s["time"], s["time"]), stay_min=30 if sun else 45) is False:
+        return False
+    if NIGHT_PLACE.search(p["name"]):  # no slot is an evening market visit
+        return False
+    if not any(k in MEAL_KINDS for k in s["kinds"]) and CAFE_NAME.search(p["name"]):
+        return False
+    return s["id"] != "d2b" or fits_breakfast(p)
 
 
 def breakfast_like(p):
@@ -169,6 +192,12 @@ def load_pois(dest):
         kind = classify(tags)
         if not kind or is_chain(tags, name):
             continue
+        if kind not in ("food", "cafe", "stay") and GENERIC_SIGHT.match(name.strip()):
+            continue
+        # the same place mapped twice with a slightly different spelling
+        if any(q["kind"] == kind and difflib.SequenceMatcher(None, q["name"], name).ratio() >= 0.9
+               for q in pois):
+            continue
         lat = el.get("lat") or el.get("center", {}).get("lat")
         lon = el.get("lon") or el.get("center", {}).get("lon")
         if lat is None:
@@ -207,9 +236,12 @@ def thai_first(p):
     return 0 if any("฀" <= c <= "๿" for c in p["name"]) else 1
 
 
-def rank(anchor, p):
-    # nearest first; a Thai name is worth about 1.5 km
-    return dist_km(anchor, (p["lon"], p["lat"])) + 1.5 * thai_first(p)
+def rank(anchor, p, toward=None):
+    # nearest first; a Thai name is worth about 1.5 km. With toward (where the traveller
+    # comes from), distance to it counts too, so a day's stops form one group instead of
+    # a star around the hotel.
+    pt = (p["lon"], p["lat"])
+    return dist_km(anchor, pt) + (dist_km(toward, pt) if toward else 0) + 1.5 * thai_first(p)
 
 
 def candidates(pool, kinds, anchor, used, max_km=None, accept=None):
@@ -219,27 +251,22 @@ def candidates(pool, kinds, anchor, used, max_km=None, accept=None):
 
 
 def choose_options(pool, kinds, anchor, used, rng, n=2, prefer=None, ranked=False,
-                   max_km=None, accept=None):
+                   max_km=None, accept=None, toward=None):
     cands = candidates(pool, kinds, anchor, used, max_km, accept)
     if prefer:
         pref = [p for p in cands if prefer(p)]
         if len(pref) >= n:
             cands = pref
-    if ranked:  # earlier kinds win if they are within reach
+    if ranked:  # earlier kinds are worth 2 km each, so a near beach beats a far viewpoint
         reach = max_km or 12
-        near = sorted((p for p in cands if dist_km(anchor, (p["lon"], p["lat"])) <= reach),
-                      key=lambda p: dist_km(anchor, (p["lon"], p["lat"])))
-        for k in kinds:
-            best = [p for p in near if p["kind"] == k]
-            if best:
-                cands = best + [p for p in near if p["kind"] != k]
-                break
+        cands = sorted((p for p in cands if dist_km(anchor, (p["lon"], p["lat"])) <= reach),
+                       key=lambda p: rank(anchor, p, toward) - 1.5 * thai_first(p) + 2 * kinds.index(p["kind"]))
         top = cands[:n]
         for p in top:
             used.add(p["id"])
         return top
-    cands.sort(key=lambda p: rank(anchor, p))
-    top = cands[:5]
+    cands.sort(key=lambda p: rank(anchor, p, toward))
+    top = cands[:4]
     rng.shuffle(top)
     picked = top[:n]
     for p in picked:
@@ -324,7 +351,21 @@ def build(dest_id, meta):
                 return km, step
         return km, WIDEN_MAX_STEPS
 
-    hotels = choose_options(pool, ["stay"], center, used, rng, n=1, prefer=is_resort)
+    def richness(h):
+        """How many meals and sights lie within the slot limits of hotel h (capped)."""
+        pt = (h["lon"], h["lat"])
+        meals = sum(p["kind"] in MEAL_KINDS and dist_km(pt, (p["lon"], p["lat"])) <= MAX_KM_MEAL for p in pool)
+        sights = sum(p["kind"] not in MEAL_KINDS and p["kind"] != "stay" and
+                     dist_km(pt, (p["lon"], p["lat"])) <= MAX_KM_SIGHT for p in pool)
+        return min(meals, 12) + min(sights, 10)
+
+    # hotels go where the places are, so every day can stay in one group around them
+    stays = [p for p in pool if p["kind"] == "stay"
+             and dist_km(center, (p["lon"], p["lat"])) <= HOTEL_FROM_CENTER_KM]
+    best = max((richness(h) for h in stays), default=0)
+    rich = {h["id"] for h in stays if richness(h) >= best - 2}
+    hotels = choose_options(pool, ["stay"], center, used, rng, n=1, prefer=is_resort,
+                            accept=lambda p: p["id"] in rich)
     if not hotels:
         raise SystemExit(f"{dest_id}: no hotels found")
     first = (hotels[0]["lon"], hotels[0]["lat"])
@@ -335,6 +376,8 @@ def build(dest_id, meta):
     if km > HOTEL_PAIR_KM:
         notes.append(f"hotel pair widened to {km} km")
     slots = []
+    by_id = {p["id"]: p for p in pool}
+    day1_meals = []
     prev = [center]  # day 1 starts in the town centre (ARRIVE)
     hotel_pts = [(h["lon"], h["lat"]) for h in hotels]
     for i, s in enumerate(SLOTS):
@@ -342,10 +385,10 @@ def build(dest_id, meta):
             opts = hotels
         else:
             meal = any(k in MEAL_KINDS for k in s["kinds"])
-            fits = None
-            if meal and ":" in s["time"]:
-                def fits(p, s=s):
-                    return open_at(p, s["time"]) is not False and (s["id"] != "d2b" or fits_breakfast(p))
+
+            def fits(p, s=s):
+                return fits_slot(p, s)
+            toward = (sum(q[0] for q in prev) / len(prev), sum(q[1] for q in prev) / len(prev))
             prefer = breakfast_like if s["id"] == "d2b" else None
             # every option must be within reach of each place the traveller comes from or goes to next
             neighbours = list(prev)
@@ -366,14 +409,21 @@ def build(dest_id, meta):
                 if len(candidates(pool, s["kinds"], anchor, used, km, accept)) >= n:
                     break
             opts = choose_options(pool, s["kinds"], anchor, used, rng, n=n, ranked=s.get("ranked", False),
-                                  max_km=km, accept=accept, prefer=prefer)
+                                  max_km=km, accept=accept, prefer=prefer, toward=toward)
             if not opts and meal:  # a meal anywhere in the destination beats a sight at mealtime
-                opts = choose_options(pool, s["kinds"], anchor, used, rng, n=1, accept=fits)
+                opts = choose_options(pool, sorted(MEAL_KINDS), anchor, used, rng, n=1, accept=fits,
+                                      toward=toward)
                 if opts:
                     notes.append(f"{s['id']} filled from the whole destination")
+            if not opts and meal:  # last resort: a restaurant from the other day
+                again = [by_id[pid] for pid in day1_meals if fits(by_id[pid])]
+                again.sort(key=lambda p: rank(anchor, p, toward))
+                opts = again[:1]
+                if opts:
+                    notes.append(f"{s['id']} reuses {opts[0]['name']} from day 1")
             if not opts:  # widen to any sight-like place
                 opts = choose_options(pool, ["sight", "temple", "park", "market", "view", "museum"],
-                                      anchor, used, rng, max_km=km)
+                                      anchor, used, rng, max_km=km, accept=fits, toward=toward)
                 notes.append(f"{s['id']} filled with sights")
             if step:
                 notes.append(f"{s['id']} widened to {km} km, legs {leg_km} km, {n} option(s)")
@@ -382,7 +432,8 @@ def build(dest_id, meta):
             prev = hotel_pts
         if opts:
             slots.append(dict(s, options=[p["id"] for p in opts]))
-    by_id = {p["id"]: p for p in pool}
+            if s["day"] == 1 and s["id"] != "hotel":
+                day1_meals.extend(p["id"] for p in opts if p["kind"] in MEAL_KINDS)
 
     def coord(pid):
         return center if pid == "ARRIVE" else (by_id[pid]["lon"], by_id[pid]["lat"])

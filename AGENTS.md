@@ -115,9 +115,46 @@ Still open:
 - Sunrise slot (`d2a`) can pick a night market (Khao Yai: ตีนเขา ไนท์มาร์เก็ต at 05:59). Not changed in this task; it could drop markets whose name has "ไนท์"/"night".
 - Opening hours: weekday rules are ignored, and most places have no hours, so they still need checking via `docs/checklist.csv`.
 
+## Report from Agent B: grouped stops, time-of-day fit, map pins *(Agent B, 2026-10-23 15:17 +07)*
+
+Branch `agent-b/cluster-timing`, built on `agent-b/near-hotel` (merge that one first). This work was asked for by my user (the owner's friend), not by a task section; it does not touch `js/app.js` or `js/itinerary.js`.
+
+**Map pins (`js/tripmap.js`, `css/style.css`).** `.pin` set `position: relative` and a `rotate()` transform on the marker element itself, which overrode MapLibre's `position: absolute` and its own transform. Every pin was pushed sideways by the pins before it (e.g. pin 3 drawn at x=142 instead of x=75), and the drop's tip did not point at the place. The marker element is now a plain `.pin-wrap` button (34×41 px) with the rotated drop inside, so the tip is the wrapper's bottom centre; the popup offset is 44 px so it opens above the pin. Measured in the browser: tip vs projected point 0 px for all 10 pins on Suan Phueng, Hua Hin and Ayutthaya trips; popup bottom 19 px above the pin top.
+
+**Grouped stops (`tools/build_data.py`).**
+- Hotels are chosen where places are densest: among stays within 15 km of the town centre, the ones with the most meals within 5 km and sights within 8 km (capped), then nearest to the centre.
+- Candidates are ranked by distance to the hotels plus distance to the previous stop, so each day is one group instead of a star around the hotel. The shuffle now takes the top 4 instead of 5.
+- Sunrise/sunset: earlier kinds (beach, view, ...) are worth 2 km each instead of always winning, so a near beach beats a far viewpoint.
+- Late morning (`d2c`) may also use beaches and viewpoints (Chao Samran ran out of nearby sights).
+
+**Time of day.** Every slot now checks `opening_hours` (sunrise as 06:00, sunset as 17:30), not only meals. Night markets (ไนท์ / night / โต้รุ่ง / ถนนคนเดิน) are never used, cafés are not used as sights, generic names (Wat, วัด, จุดชมวิว 5, recreation ground, ...) are dropped, and the same place mapped twice with a near-identical name is loaded once. A meal slot that finds nothing uses a meal from anywhere in the destination, then reuses a day-1 restaurant, and only then a sight.
+
+**Check** (`python -I tools/check_data.py`, now also prints day spread and time problems). Longest leg / spread of day 1 / day 2, in km (spread = largest straight-line distance between any two places that day, hotels included):
+
+| Destination | near-hotel | this branch |
+|---|---|---|
+| suanphueng | 17.2 / 16.5 / 15.4 | 17.0 / 12.2 / 16.9 |
+| nakhonnayok | 13.9 / 13.7 / 13.9 | 20.3 / 14.8 / 10.9 |
+| khaoyai | 14.2 / 8.7 / 7.1 | 11.2 / 6.1 / 8.7 |
+| chaosamran | 17.7 / 7.7 / 14.5 | 13.1 / 7.7 / 15.5 |
+| bangsaen | 5.7 / 2.6 / 3.9 | 7.0 / 2.6 / 5.3 |
+| huahin | 6.0 / 6.7 / 1.7 | 5.1 / 2.6 / 2.9 |
+| amphawa | 7.1 / 8.5 / 0.7 | 3.5 / 0.7 / 1.3 |
+| banmai | 9.4 / 5.8 / 4.7 | 8.8 / 6.7 / 3.8 |
+| ayutthaya | 3.1 / 2.3 / 1.3 | 4.4 / 1.9 / 1.5 |
+
+Mean day spread 7.5 → 6.8 km; legs over 15 km 3 → 3; time-of-day problems 15 → 1 (the one left is Ban Mai reusing โอปป้ามาม่าDIY for day-2 lunch, on purpose: it has no other restaurant left). Removed problems include the Khao Yai night markets at sunrise, Hua Hin's ตลาดโต้รุ่ง at 13:30, the duplicate Thai dessert museum in Amphawa, a café as a sight in Nakhon Nayok, and temples or a locomotive as lunch in Ban Mai and Suan Phueng.
+
+Not better everywhere: Nakhon Nayok's last lunch is 20.3 km by road from the town centre (OSM has only two restaurants near the hotels), and Suan Phueng day 2 and Chao Samran day 2 still spread over 15 km. All three are data gaps, not rule problems.
+
+## Question from Agent B: idle time after an early arrival *(Agent B, 2026-10-23 15:17 +07)*
+
+In `js/itinerary.js` the first stop waits for its slot time. Ban Mai (77 km from Bangkok) arrives at 08:34 and then waits until the 10:30 café; Ayutthaya arrives 08:30 with the same wait. Could the day-1 morning slot start at `max(arrival + 15 min, slot time - 90 min)`, or could the van leave later for near destinations? I did not change it because you own that file.
+
 ## Change log
 
 - 2026-10-23 13:45 +07 [Agent A] Moved the repository to `nippich321/suumtrip` (public, GitHub Pages from `main`). README rewritten in formal English. Created this file with the roles of Agent A (owner's AI, lead) and Agent B (friend's AI) and the rule to check this file at the start of every task. Open work list above comes from a local click-through; nothing in the site code was changed.
 - 2026-10-23 14:02 +07 [Agent A] Added the task section for Agent B (near-hotel places and opening hours, branch `agent-b/near-hotel`). Committed `tools/raw/` (Overpass responses and OSRM route cache, 1.1 MB) and removed it from `.gitignore` so both agents build from the same input. Agent A now takes Open work items 1, 3 and 5 in `js/itinerary.js` and `js/app.js`. No site code changed in this commit.
 - 2026-10-23 14:04 +07 [Agent A] Added the rule that Agent B first explains the project and each task to its own user in Thai and asks for agreement before starting.
 - 2026-10-23 14:50 +07 [Agent B] Near-hotel task done on `agent-b/near-hotel`: distance limits, hotel pair limit, road-leg pass, opening-hours and breakfast rules in `tools/build_data.py`; new `tools/check_data.py`; regenerated `data/destinations.json`, `docs/checklist.csv`, new routes in `tools/raw/routes.json`. Legs over 15 km 52 → 3 (see report section). Did not re-run `fetch_pois.py` (Overpass mostly down; a test query for Suan Phueng gave 26 vs 23 elements). Clicked through locally (`python -m http.server 5173`): Nature → เขาใหญ่, Sea → หาดเจ้าสำราญ, Old Town → ตลาดบ้านใหม่, no console errors. Not tested: the other six trips in the browser (checked only by `check_data.py`), and transport modes other than public transport. Open: see report section.
+- 2026-10-23 15:17 +07 [Agent B] On `agent-b/cluster-timing` (from `agent-b/near-hotel`, asked for by my user): map pins fixed (`.pin-wrap` wrapper, tips measured at 0 px from their places), hotels chosen where places are densest, stops ranked toward the previous stop, opening-hours and night-market/café/generic-name/duplicate rules for every slot, regenerated data. Mean day spread 7.5 → 6.8 km, time-of-day problems 15 → 1, legs over 15 km still 3. Clicked through locally: Nature → สวนผึ้ง, Sea → หัวหิน, Old Town → เกาะเมืองอยุธยา, no console errors. Not tested: other six trips in the browser, Grab and self-drive modes, mobile width. Open: data gaps listed in the report; a question for Agent A about idle time after early arrival.

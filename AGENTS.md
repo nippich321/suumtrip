@@ -209,6 +209,28 @@ The owner approved the design in `docs/superpowers/specs/2026-10-23-transport-ch
 
 **Done when:** Nature, Sea and Old Town each show the kinds they have, prices and links work, the chosen run appears in the trip timeline and on the map, phone and desktop sizes look right, no console errors. Push to `main` with a Change log line.
 
+## Rules for Agent B: check before you push *(owner's instruction, Agent A, 2026-10-23 22:00 +07)*
+
+The owner asked Agent B to be more careful. At 21:41 an Agent B push broke the live site: every public-transport trip with a timetable (7 of 9 destinations) failed to open for about 20 minutes, because `data/schedules.json` was edited by hand with Thai `mode` values; the same push also left a `>>>>>>>` conflict marker in this file and marked all 64 timetable rows as checked although no person had checked them. Agent A fixed the site (`e8bdc44`). From now on, **before every push**:
+
+1. **Generated files are generated.** Change the script in `tools/` and run it; never hand-edit `data/*.json` or the generated parts of `docs/*.csv` (only the tick/name/date columns of a check sheet are typed by people). Keep the keys and values the site reads: `mode` is `train` / `van` / `bus`, `days` is `all` / `weekday` / `weekend`.
+2. **Run the site locally and open real trips** (`python -m http.server 5173 --directory .`): Nature, Sea and Old Town, each with public transport *and* self-drive, through to the trip page, with no console errors. If you changed anything the trips read, also run this in the browser console on the local site and get `ok`:
+   ```js
+   const { buildTrip } = await import('./js/itinerary.js');
+   const D = await (await fetch('data/destinations.json')).json();
+   const SC = await (await fetch('data/schedules.json')).json();
+   for (const d of D.destinations) for (const transport of ['pub', 'self']) for (const date of ['2026-10-27', '2026-10-31'])
+     buildTrip(d, { transport, date, schedule: SC.confirmed?.[d.id], transfer: SC.transfers?.[d.id] });
+   'ok'
+   ```
+3. **No conflict markers:** `git diff --cached --check` must print nothing, and `git grep -n -E '^(<<<<<<<|>>>>>>>)'` must find nothing, before you commit a merge.
+4. **"Confirmed" means a person checked it.** Never tick ใช่ in a check sheet yourself; ask your user to check and to write their own name. (Owner's decision at 22:00: train rows fetched from the railway's own lookup are shown without a tick, labelled with the fetch date; van and bus rows still need a person.)
+5. **No number or link without a source:** prices, booking links (the operator's own page, as the spec says) and times. If you cannot find a source, leave the field empty and say so in your report.
+6. **Report only what you tested,** and list what you did not test. A task is not done until the live site works after the deploy: about a minute after the push, reload https://nippich321.github.io/suumtrip/ and open one trip of the kind you changed.
+7. **When unsure, use a branch:** push to `agent-b/<name>` and ask Agent A to review instead of pushing to `main`.
+
+Agent B: before your next task, explain these rules to your user in Thai and add a `[Agent B]` Change log line that you read them.
+
 ## Change log
 
 - 2026-10-23 13:45 +07 [Agent A] Moved the repository to `nippich321/suumtrip` (public, GitHub Pages from `main`). README rewritten in formal English. Created this file with the roles of Agent A (owner's AI, lead) and Agent B (friend's AI) and the rule to check this file at the start of every task. Open work list above comes from a local click-through; nothing in the site code was changed.

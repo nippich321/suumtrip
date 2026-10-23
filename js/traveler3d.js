@@ -1,6 +1,7 @@
 // Low-poly 3D traveler drawn on top of the MapLibre map with three.js: the
-// trip's vehicle or two walking people. Models are Kenney's CC0 Car Kit and
-// Mini Characters (assets/3d/); simple box models stand in until they load.
+// trip's vehicle or two walking people. Models are Kenney's CC0 Car Kit, Train
+// Kit and Mini Characters (assets/3d/); simple box models stand in until they
+// load. A train is a locomotive with carriages that follow the route behind it.
 // Effects: exhaust smoke while driving, a hop with a burst of smoke when a leg
 // starts (go), a settle when it ends (stop), and a pop with a puff of smoke
 // whenever the vehicle changes.
@@ -12,6 +13,12 @@ const VEHICLES = {
   grab: { file: 'assets/3d/cars/hatchback-sports.glb', length: 4.2 },
   songthaew: { file: 'assets/3d/cars/truck.glb', length: 4.6 },
   van: { file: 'assets/3d/cars/van.glb', length: 4.9 },
+  // coach (รถทัวร์): the Kenney van stretched in Blender, three axles (tools/build_bus.py)
+  bus: { file: 'assets/3d/cars/bus.glb', length: 9 },
+  // Kenney Train Kit: an orange diesel with two orange/cream carriages, close to the
+  // State Railway's look. The bogies are not wheels, so they do not spin.
+  train: { file: 'assets/3d/trains/train-diesel-a.glb', length: 4.3, spin: false, exhaust: [0, 2.9, 0.3],
+    cars: { file: 'assets/3d/trains/train-locomotive-passenger-a.glb', length: 4.6, count: 2, gap: 0.12 } },
 };
 const WALKERS = ['assets/3d/people/character-female-b.glb', 'assets/3d/people/character-male-a.glb'];
 const PERSON_HEIGHT = 2;
@@ -57,7 +64,7 @@ function boxCar(color, roof, length = 4) {
 }
 
 // ---------- entries: one per vehicle kind ----------
-function makeEntry(kind, object, { length, width, wheels = [], wheelR = 0.6, body = null, walkers = [] }) {
+function makeEntry(kind, object, { length, width, wheels = [], wheelR = 0.6, body = null, walkers = [], cars = [], exhaust = null }) {
   const pivot = new THREE.Group(); // squash, stretch and hop
   pivot.add(object);
   const root = new THREE.Group(); // pop in and out
@@ -66,9 +73,25 @@ function makeEntry(kind, object, { length, width, wheels = [], wheelR = 0.6, bod
   for (const w of wheels) w.userData.baseX = w.rotation.x;
   if (body) body.userData.baseY = body.position.y;
   return {
-    kind, root, pivot, length, width, wheels, wheelR, body, walkers, spin: 0,
-    exhaust: kind === 'walk' ? null : new THREE.Vector3(width * 0.26, 0.42, -length / 2 - 0.1),
+    kind, root, pivot, length, width, wheels, wheelR, body, walkers, cars, spin: 0,
+    exhaust: kind === 'walk' ? null : exhaust || new THREE.Vector3(width * 0.26, 0.42, -length / 2 - 0.1),
   };
+}
+
+// A carriage: its own pop/hop groups and shadow, placed in the locomotive's frame
+// every frame (see placeCars).
+function makeCar(object, length, width) {
+  const pivot = new THREE.Group();
+  pivot.add(object);
+  const root = new THREE.Group();
+  root.add(pivot);
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 20), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18, depthWrite: false }));
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = 0.02;
+  shadow.scale.set((width / 2) * 1.1, (length / 2) * 1.05, 1);
+  root.add(shadow);
+  root.visible = false;
+  return { root, pivot, length };
 }
 
 function fallbackEntries() {
@@ -78,6 +101,8 @@ function fallbackEntries() {
     grab: makeEntry('vehicle', boxCar(0x00b14f, 0x00964a), { length: 4, width: 1.8 }),
     songthaew: makeEntry('vehicle', boxCar(0x2e6bd6, 0xe8e8e8, 4.4), { length: 4.4, width: 1.9 }),
     van: makeEntry('vehicle', boxCar(0xf4f4f4, 0x37474f, 5), { length: 5, width: 2 }),
+    bus: makeEntry('vehicle', boxCar(0x6f8fd8, 0xdfe6f2, 9), { length: 9, width: 2.2 }),
+    train: makeEntry('vehicle', boxCar(0xffa53a, 0x5d6178, 4.3), { length: 4.3, width: 2.1 }),
   };
 }
 
@@ -85,26 +110,41 @@ function prepare(object) {
   object.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
 }
 
-async function loadVehicle(loader, spec) {
-  const gltf = await loader.loadAsync(spec.file);
-  const model = gltf.scene;
+// Centre a model on the ground at the origin, scaled to `length` along z.
+function fitModel(model, length) {
   prepare(model);
   const bounds = new THREE.Box3().setFromObject(model);
   const size = bounds.getSize(new THREE.Vector3());
-  const k = spec.length / size.z;
+  const k = length / size.z;
   model.position.set(-(bounds.min.x + bounds.max.x) / 2, -bounds.min.y, -(bounds.min.z + bounds.max.z) / 2);
   const fit = new THREE.Group();
   fit.add(model);
   fit.scale.setScalar(k);
+  return { fit, k, width: size.x * k };
+}
+
+async function loadVehicle(loader, spec) {
+  const gltf = await loader.loadAsync(spec.file);
+  const model = gltf.scene;
+  const { fit, k, width } = fitModel(model, spec.length);
   const wheels = [];
   let body = null;
   model.traverse((o) => {
-    if (/^wheel/.test(o.name)) wheels.push(o);
+    if (/^wheel/.test(o.name) && spec.spin !== false) wheels.push(o);
     if (o.name === 'body') body = o;
   });
   // the wheel's centre height is its radius (the wheels stand on y = 0)
   const wheelR = wheels.length ? (wheels[0].position.y + model.position.y) * k : 0.6;
-  return makeEntry('vehicle', fit, { length: spec.length, width: size.x * k, wheels, wheelR, body });
+  const cars = [];
+  if (spec.cars) {
+    const car = (await loader.loadAsync(spec.cars.file)).scene;
+    for (let i = 0; i < spec.cars.count; i++) {
+      const c = fitModel(i ? car.clone() : car, spec.cars.length);
+      cars.push({ ...makeCar(c.fit, spec.cars.length, c.width), gap: spec.cars.gap });
+    }
+  }
+  const exhaust = spec.exhaust ? new THREE.Vector3(...spec.exhaust) : null;
+  return makeEntry('vehicle', fit, { length: spec.length, width, wheels, wheelR, body, cars, exhaust });
 }
 
 async function loadWalkers(loader) {
@@ -130,6 +170,33 @@ async function loadWalkers(loader) {
     return { mixer, walk, idle };
   });
   return makeEntry('walk', group, { length: 1.4, width: 2.4, walkers });
+}
+
+// Height and squash of a hop that started t seconds ago.
+function hopShape(t, jump) {
+  if (t >= 0 && t < 0.12) return [0, 0.18 * easeOutCubic(t / 0.12)];
+  if (t >= 0.12 && t < 0.5) {
+    const p = Math.sin(Math.PI * (t - 0.12) / 0.38);
+    return [jump * p, -0.12 * p];
+  }
+  if (t >= 0.5 && t < 1) {
+    const p = t - 0.5;
+    return [0, 0.2 * Math.exp(-6 * p) * Math.cos(p * 18)];
+  }
+  return [0, 0];
+}
+
+// The point `back` (Mercator units) behind the head of a path [{x, y}, ...] that runs
+// from the head backwards; past its end the path goes on straight.
+function pointBehind(path, back, tail) {
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1], b = path[i];
+    const seg = Math.hypot(b.x - a.x, b.y - a.y);
+    if (back <= seg && seg > 0) return { x: a.x + ((b.x - a.x) * back) / seg, y: a.y + ((b.y - a.y) * back) / seg };
+    back -= seg;
+  }
+  const end = path[path.length - 1];
+  return { x: end.x + tail.x * back, y: end.y + tail.y * back };
 }
 
 // ---------- smoke and dust puffs ----------
@@ -203,6 +270,7 @@ export function createTravelerLayer(maplibregl) {
   let speed = 0;         // local units per second
   let smokeClock = 0;
   let stepClock = 0;
+  let trail = [];        // where the head has been (Mercator, newest first), for carriages
 
   const repaint = () => map?.triggerRepaint();
   const sc = (e) => e.root.scale.x;
@@ -240,16 +308,51 @@ export function createTravelerLayer(maplibregl) {
     popDelay = shown ? 0.14 : 0;
     shown = key;
     swapAt = now;
+    trail = [];
+  }
+
+  // Carriages follow the route the head has travelled (straight behind it before that),
+  // each one set on the path by its two ends so it bends round curves.
+  function placeCars(e, mc, s, scale, now) {
+    if (!e.cars.length) return;
+    const ch = Math.cos(state.heading), sh = Math.sin(state.heading);
+    const path = [{ x: mc.x, y: mc.y }, ...trail];
+    const last = path[path.length - 1], prev = path[path.length - 2];
+    const len = prev ? Math.hypot(last.x - prev.x, last.y - prev.y) : 0;
+    const tail = len > 0 ? { x: (last.x - prev.x) / len, y: (last.y - prev.y) / len } : { x: sh, y: -ch };
+    const toLocal = (p) => {
+      const x = (p.x - mc.x) / s, z = (p.y - mc.y) / s;
+      return [x * ch + z * sh, -x * sh + z * ch];
+    };
+    let back = e.length / 2;
+    e.cars.forEach((c, i) => {
+      back += c.gap;
+      const f = toLocal(pointBehind(path, back * s, tail));
+      const b = toLocal(pointBehind(path, (back + c.length) * s, tail));
+      back += c.length;
+      c.root.position.set((f[0] + b[0]) / 2, 0, (f[1] + b[1]) / 2);
+      c.root.rotation.y = Math.atan2(f[0] - b[0], f[1] - b[1]);
+      c.root.scale.setScalar(scale);
+      const [y, squash] = hopShape(now - hopAt - 0.09 * (i + 1), 1.1);
+      c.pivot.position.y = y + (speed > 0.3 ? 0.04 * Math.abs(Math.sin(now * 14 + i)) : 0);
+      c.pivot.scale.set(1 + squash * 0.6, 1 - squash, 1 + squash * 0.6);
+    });
+    // keep only as much trail as the carriages need
+    let need = back * s * 1.5;
+    for (let i = 1; i < path.length; i++) {
+      need -= Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+      if (need < 0) { trail.length = i; break; }
+    }
   }
 
   // swap the stand-in for the real model once it has loaded
   function install(key, entry) {
     const old = entries[key];
-    world.remove(old.root);
+    world.remove(old.root, ...old.cars.map((c) => c.root));
     entry.root.visible = old.root.visible;
     entry.root.scale.copy(old.root.scale);
     entries[key] = entry;
-    world.add(entry.root);
+    world.add(entry.root, ...entry.cars.map((c) => c.root));
     if (leaving === key) leaving = null;
     repaint();
   }
@@ -293,39 +396,36 @@ export function createTravelerLayer(maplibregl) {
       if (lastMc && dt > 0) {
         const d = Math.hypot(mc.x - lastMc.x, mc.y - lastMc.y) / s;
         if (d < 12) speed += (Math.min(40, d / dt) - speed) * Math.min(1, dt * 8); // a jump to another place is not speed
+        else trail = [];
       }
+      if (!trail.length || Math.hypot(mc.x - trail[0].x, mc.y - trail[0].y) > s * 0.05) trail.unshift({ x: mc.x, y: mc.y });
       lastMc = mc;
 
       // pop the old model away and the new one in
       const tSwap = now - swapAt;
-      for (const [key, e] of Object.entries(entries)) e.root.visible = key === shown || key === leaving;
+      for (const [key, e] of Object.entries(entries)) {
+        e.root.visible = key === shown || key === leaving;
+        for (const c of e.cars) c.root.visible = e.root.visible;
+      }
       if (leaving) {
         const k = clamp01(tSwap / 0.24);
-        entries[leaving].root.scale.setScalar(Math.max(0.001, 1 - easeInBack(k)));
-        if (k >= 1) { entries[leaving].root.visible = false; leaving = null; }
+        const out = entries[leaving];
+        out.root.scale.setScalar(Math.max(0.001, 1 - easeInBack(k)));
+        for (const c of out.cars) c.root.scale.copy(out.root.scale);
+        if (k >= 1) { out.root.visible = false; for (const c of out.cars) c.root.visible = false; leaving = null; }
       }
       const e = entries[shown];
       e.root.scale.setScalar(Math.max(0.001, easeOutElastic(clamp01((tSwap - popDelay) / 0.65))));
 
       // hop when a leg starts, wobble when it ends, a little bounce while driving
-      let y = 0;
-      let squash = 0;
       const tHop = now - hopAt;
-      const jump = e.kind === 'walk' ? 0.9 : 1.3;
-      if (tHop >= 0 && tHop < 0.12) squash = 0.18 * easeOutCubic(tHop / 0.12);
-      else if (tHop >= 0.12 && tHop < 0.5) {
-        const p = Math.sin(Math.PI * (tHop - 0.12) / 0.38);
-        y = jump * p;
-        squash = -0.12 * p;
-      } else if (tHop >= 0.5 && tHop < 1) {
-        const p = tHop - 0.5;
-        squash = 0.2 * Math.exp(-6 * p) * Math.cos(p * 18);
-      }
+      let [y, squash] = hopShape(tHop, e.kind === 'walk' ? 0.9 : 1.3);
       const tSettle = now - settleAt;
       if (tSettle >= 0 && tSettle < 0.7) squash += 0.14 * Math.exp(-6 * tSettle) * Math.cos(tSettle * 18);
       if (e.kind === 'vehicle' && speed > 0.3) y += 0.05 * Math.abs(Math.sin(now * 14));
       e.pivot.position.y = y;
       e.pivot.scale.set(1 + squash * 0.6, 1 - squash, 1 + squash * 0.6);
+      placeCars(e, mc, s, sc(e), now);
 
       // wheels roll with the speed, the body rocks on its springs
       if (e.wheels.length) {
@@ -374,7 +474,7 @@ export function createTravelerLayer(maplibregl) {
       renderer.resetState();
       renderer.render(scene, camera);
 
-      const busy = smoke || leaving || tSwap < 1 || (tHop >= 0 && tHop < 1) || (tSettle >= 0 && tSettle < 0.7)
+      const busy = smoke || leaving || tSwap < 1 || (tHop >= 0 && tHop < 1.3) || (tSettle >= 0 && tSettle < 0.7)
         || speed > 0.01 || e.kind === 'walk'; // the walkers' idle animation keeps going
       if (busy) repaint();
     },

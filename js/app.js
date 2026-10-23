@@ -322,6 +322,8 @@ async function mountPlanner(t) {
     },
   });
   S.driveState = planner.state;
+  const fuel = (ROADSIDE.destinations[t.dest.id] || []).filter((p) => p.kind === 'fuel');
+  tripMap?.setFuel(fuel, (stop, dir) => planner?.addStop(dir, stop));
 }
 
 // Let the loading car leave once the map has drawn (or after 9 s at most).

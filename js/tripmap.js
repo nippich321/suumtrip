@@ -58,6 +58,7 @@ export function createTripMap(container, trip, { onStep } = {}) {
   let legs = items.map((it, i) => ({ it, i })).filter((x) => x.it.type === 'leg');
   const stops = items.map((it, i) => ({ it, i })).filter((x) => x.it.type === 'stop');
   let restMarkers = [];
+  let fuelMarkers = [];
   const routeData = () => ({ type: 'FeatureCollection', features: legs.map(({ it }) => ({
     type: 'Feature', properties: { v: it.vehicle, long: it.isLong ? 1 : 0, color: VEHICLE_COLOR[it.vehicle] },
     geometry: { type: 'LineString', coordinates: it.geom },
@@ -222,7 +223,28 @@ export function createTripMap(container, trip, { onStep } = {}) {
     drawRests();
   }
 
-  return { map, play, pause, focus, setTrip, isPlaying: () => playing, current: () => current, fitLocal, destroy: () => { pause(); map.remove(); } };
+  // Self-drive: every fuel station along the Bangkok drive, small; tapping one offers to
+  // make it a rest stop (onAdd(station, 'out' | 'back')).
+  function setFuel(list, onAdd) {
+    for (const m of fuelMarkers) m.remove();
+    fuelMarkers = list.map((s) => {
+      const el = document.createElement('button');
+      el.className = 'fuel-pin';
+      el.setAttribute('aria-label', s.name);
+      el.innerHTML = '<i class="ti ti-gas-station"></i>';
+      const box = document.createElement('div');
+      box.className = 'fuel-pop';
+      box.innerHTML = `<b></b><span class="small muted"></span>
+        <div><button data-dir="out">แวะขาไป</button><button data-dir="back">แวะขากลับ</button></div>`;
+      box.querySelector('b').textContent = s.name;
+      box.querySelector('span').textContent = `ปั๊มน้ำมัน · กม. ${s.km} จากกรุงเทพฯ${s.food ? ' · มีร้านกาแฟ/อาหาร' : ''}`;
+      const popup = new maplibregl.Popup({ offset: 14, closeButton: false }).setDOMContent(box);
+      box.querySelectorAll('[data-dir]').forEach((b) => (b.onclick = () => { onAdd(s, b.dataset.dir); popup.remove(); }));
+      return new maplibregl.Marker({ element: el }).setLngLat([s.lon, s.lat]).setPopup(popup).addTo(map);
+    });
+  }
+
+  return { map, play, pause, focus, setTrip, setFuel, isPlaying: () => playing, current: () => current, fitLocal, destroy: () => { pause(); fuelMarkers = []; map.remove(); } };
 }
 
 export { VEHICLE };

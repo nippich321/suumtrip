@@ -339,6 +339,13 @@ export function mountDrivePlanner(el, ctx) {
       else render();
     },
     state: st,
+    // a stop picked on the map
+    addStop(dir, stop) {
+      if (st.stops[dir].includes(stop)) return;
+      st.stops[dir].push(stop);
+      st.stops[dir].sort((x, y) => (dir === 'out' ? x.km - y.km : y.km - x.km));
+      replan([dir]);
+    },
     destroy: () => { if (st.live) stopLive(); },
   };
 }

@@ -292,3 +292,45 @@ html.ld-lock, html.ld-lock body { overflow: hidden; }
 .dp-legend { margin-left: auto; }
 .dp-legend span { color: #a39cb0; font-weight: 600; }
 .dp-legend .deal { color: var(--teal); }
+
+/* step-by-step booking pages (wizard() in js/app.js) */
+.wiz { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: start; max-width: 980px; }
+.wiz-side { position: sticky; top: 76px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 16px; }
+.wiz-title { font-family: var(--display); font-weight: 500; letter-spacing: .02em; margin-bottom: 12px; }
+.wiz-side ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.wiz-side li > a, .wiz-side li { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--muted); font-size: 14px; }
+.wiz-side li { padding: 8px 4px; border-radius: 10px; }
+.wiz-side li.done > a { color: var(--ink); width: 100%; }
+.wiz-side li.done:hover { background: var(--bg); }
+.wiz-side li.now { color: var(--ink); font-weight: 600; }
+.wiz-dot { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; background: #fff; }
+.wiz-side li.now .wiz-dot { border-color: var(--coral); box-shadow: inset 0 0 0 5px #fff; background: var(--coral); }
+.wiz-side li.done .wiz-dot { border-color: var(--teal); color: var(--teal); font-size: 15px; }
+.wiz-txt { display: flex; flex-direction: column; line-height: 1.3; }
+.wiz-txt b { color: var(--ink); font-weight: 600; font-size: 15px; }
+.wiz-main { min-width: 0; padding-top: 4px; }
+.wiz-next { display: flex; justify-content: center; gap: 10px; margin-top: 24px; }
+.wiz-next .btn { min-width: 160px; }
+.trcards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.trcard { display: flex; flex-direction: column; padding: 0; border: 2px solid var(--line); border-radius: var(--radius); background: var(--card); overflow: hidden; text-align: left; cursor: pointer; box-shadow: var(--shadow); transition: border-color .15s, transform .1s; font: inherit; color: inherit; }
+.trcard:hover { transform: translateY(-2px); }
+.trcard.on { border-color: var(--teal); }
+.trcard-art { height: 140px; display: flex; align-items: center; justify-content: center; gap: 18px; font-size: 54px; color: #fff; }
+.trcard.pub .trcard-art { background: linear-gradient(135deg, #2e6bd6, #10a39a); }
+.trcard.self .trcard-art { background: linear-gradient(135deg, #ff6b4a, #ffb020); }
+.trcard-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 2px; }
+.trcard .t { font-family: var(--display); font-weight: 500; font-size: 18px; }
+.trcard .d { font-size: 13px; color: var(--muted); }
+.stop .warn { font-size: 12px; color: var(--gold-ink); background: var(--sun-soft); border-radius: 8px; padding: 2px 8px; margin-top: 4px; display: inline-block; }
+@media (max-width: 760px) {
+  .wiz { grid-template-columns: 1fr; gap: 14px; }
+  .wiz-side { position: static; padding: 10px; }
+  .wiz-title { display: none; }
+  .wiz-side ol { display: flex; overflow-x: auto; gap: 6px; }
+  .wiz-side li { flex: none; padding: 4px 6px; gap: 6px; font-size: 12px; }
+  .wiz-side li > a { gap: 6px; font-size: 12px; }
+  .wiz-txt b { font-size: 12px; }
+  .wiz-dot { width: 20px; height: 20px; font-size: 12px; }
+  .trcards { grid-template-columns: 1fr; }
+  .trcard-art { height: 96px; font-size: 40px; }
+}

@@ -16,7 +16,6 @@ export const CATEGORIES = {
 };
 
 export const TRANSPORT = {
-  pub: { label: 'ขนส่งสาธารณะ', icon: 'ti-bus', note: 'ประหยัดสุด รถตู้/รถไฟ + สองแถว' },
-  grab: { label: 'Grab / วิน', icon: 'ti-motorbike', note: 'ง่ายสุด รถตู้ไป แล้วเรียก Grab ในพื้นที่' },
+  pub: { label: 'ขนส่งสาธารณะ', icon: 'ti-train', note: 'รถไฟ/รถตู้ไป-กลับตามตารางจริง แล้วต่อสองแถวในพื้นที่' },
   self: { label: 'ขับรถเอง', icon: 'ti-steering-wheel', note: 'อิสระสุด นำทางถึงทุกจุด' },
 };

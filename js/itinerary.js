@@ -59,8 +59,41 @@ function legCost(vehicle, meters) {
   return Math.round((km * 3.5) / 10) * 10; // fuel
 }
 
+const MODE = { train: { label: 'รถไฟ', icon: 'ti-train' }, van: { label: 'รถตู้', icon: 'ti-bus' }, bus: { label: 'รถบัส', icon: 'ti-bus' } };
+
+// Confirmed public-transport departures (data/schedules.json) running on this date, as
+// minutes after midnight. A row with `last` repeats every `every` minutes; without
+// `every` it only says "some time between depart and last" (flex).
+function departures(rows, date) {
+  const g = new Date(date).getDay();
+  const weekend = g === 0 || g === 6;
+  const out = [];
+  for (const r of rows || []) {
+    if ((r.days === 'weekday' && weekend) || (r.days === 'weekend' && !weekend)) continue;
+    const dep = toMin(r.depart);
+    const dur = r.arrive ? (toMin(r.arrive) - dep + 1440) % 1440 : null;
+    if (r.last && r.every) for (let t = dep; t <= toMin(r.last); t += r.every) out.push({ dep: t, dur, row: r });
+    else out.push({ dep, dur, row: r, until: r.last ? toMin(r.last) : null });
+  }
+  return out.sort((a, b) => a.dep - b.dep);
+}
+
+// The run that leaves at `want` or as close as allowed: latest at or before it when
+// `before`, else the first at or after it. Runs with a fixed time win over flex ones.
+function pickRun(runs, want, before) {
+  const fixed = runs.filter((r) => r.until == null);
+  return pickFrom(fixed, want, before) || pickFrom(runs.filter((r) => r.until != null), want, before);
+}
+
+function pickFrom(runs, want, before) {
+  const at = (r) => (r.until != null ? Math.min(Math.max(want, r.dep), r.until) : r.dep);
+  const ok = runs.map((r) => ({ ...r, dep: at(r) })).filter((r) => (before ? r.dep <= want : r.dep >= want));
+  if (!ok.length) return null;
+  return before ? ok.reduce((a, b) => (b.dep > a.dep ? b : a)) : ok.reduce((a, b) => (b.dep < a.dep ? b : a));
+}
+
 export function buildTrip(dest, opts) {
-  const { transport, date } = opts;
+  const { transport, date, schedule } = opts;
   const chosen = {};
   for (const s of dest.slots) chosen[s.id] = pick(s.options);
   const day1 = new Date(date);
@@ -70,24 +103,38 @@ export function buildTrip(dest, opts) {
 
   const items = [];
   const getLeg = (a, b) => dest.legs[`${a}>${b}`];
-  const pushLeg = (from, to, leg, start, isLong, reverse) => {
+  // run: a timetabled departure, which sets the long leg's duration and its label
+  const pushLeg = (from, to, leg, start, isLong, reverse, run) => {
     if (!leg) return start;
     const vehicle = legVehicle(leg, transport, isLong);
     const slow = isLong && transport !== 'self' ? 1.3 : vehicle === 'walk' ? 1 : 1.15;
-    const sec = leg.sec * slow + (isLong && transport !== 'self' ? 20 * 60 : 0);
+    const sec = run?.dur != null ? run.dur * 60 : leg.sec * slow + (isLong && transport !== 'self' ? 20 * 60 : 0);
     const geom = reverse ? [...leg.geom].reverse() : leg.geom;
+    const mode = run && MODE[run.row.mode];
     items.push({ type: 'leg', from, to, vehicle, sec, m: leg.m, cost: legCost(vehicle, leg.m),
-      geom, start, end: start + sec / 60, isLong });
+      geom, start, end: start + sec / 60, isLong, label: mode?.label, icon: mode?.icon });
     return start + sec / 60;
   };
+  const longLeg = dest.legs['ORIGIN>ARRIVE'];
+  const pub = transport !== 'self';
+  const outRuns = pub ? departures(schedule?.out, date) : [];
+  const backRuns = pub ? departures(schedule?.back, date) : [];
+  const WAIT = 'รอทีมงานยืนยันเวลารถ เวลาในแผนนี้เป็นการประมาณ';
+  const runSub = (r, verb) => `${MODE[r.row.mode].label} ${r.row.operator} · ${verb} ${r.row.board}`
+    + (r.until != null ? ` (ไม่มีรอบแน่นอน มีรถระหว่าง ${r.row.depart}–${r.row.last})` : '');
 
-  // Day 1: leave Bangkok at 07:00
+  // Day 1: leave Bangkok at 07:00, or on the confirmed run that arrives in time for the first stop
   let clock = toMin('07:00');
   let day = 1;
+  const firstAt = /:/.test(dest.slots[0].time) ? toMin(dest.slots[0].time) : toMin('10:30');
+  const estimate = (longLeg.sec * 1.3) / 60 + 20;
+  const outRun = pickRun(outRuns, firstAt - 30 - estimate, true) || pickRun(outRuns, 0, false);
+  if (outRun) clock = outRun.dep;
   items.push({ type: 'start', day, time: clock, name: 'ออกเดินทางจากกรุงเทพฯ',
-    sub: transport === 'self' ? 'ขับรถออกจากบ้าน' : `ขึ้นรถตู้ที่${dest.terminal}` });
-  clock = pushLeg('ORIGIN', 'ARRIVE', dest.legs['ORIGIN>ARRIVE'], clock, true, false);
-  items.push({ type: 'arrive', day, time: clock, name: `ถึง${dest.name}`, sub: dest.province });
+    sub: !pub ? 'ขับรถออกจากบ้าน' : outRun ? runSub(outRun, 'ขึ้นที่') : `ขึ้นรถตู้ที่${dest.terminal}`,
+    warn: pub && !outRun ? WAIT : null });
+  clock = pushLeg('ORIGIN', 'ARRIVE', longLeg, clock, true, false, outRun);
+  items.push({ type: 'arrive', day, time: clock, name: `ถึง${dest.name}`, sub: outRun ? `ลงที่ ${outRun.row.alight}` : dest.province });
 
   let prev = 'ARRIVE';
   const visit = (slot, poiId) => {
@@ -120,8 +167,14 @@ export function buildTrip(dest, opts) {
   clock = Math.max(clock, toMin('14:00'));
   const backLeg = getLeg(prev, 'ARRIVE');
   clock = pushLeg(prev, 'ARRIVE', backLeg, clock, false, false);
-  items.push({ type: 'depart', day: 2, time: clock, name: transport === 'self' ? 'ขับรถกลับกรุงเทพฯ' : `ขึ้นรถตู้กลับ${dest.terminal.replace('สถานีขนส่ง', 'ขนส่ง')}`, sub: dest.name });
-  clock = pushLeg('ARRIVE', 'ORIGIN', dest.legs['ORIGIN>ARRIVE'], clock, true, true);
+  // the first confirmed run home that leaves after we reach it (10 minutes to buy a ticket)
+  const backRun = pickRun(backRuns, clock + 10, false);
+  if (backRun) clock = backRun.dep;
+  items.push({ type: 'depart', day: 2, time: clock,
+    name: !pub ? 'ขับรถกลับกรุงเทพฯ' : backRun ? `ขึ้น${MODE[backRun.row.mode].label}กลับกรุงเทพฯ` : `ขึ้นรถตู้กลับ${dest.terminal.replace('สถานีขนส่ง', 'ขนส่ง')}`,
+    sub: backRun ? `${runSub(backRun, 'ที่')} · ถึง ${backRun.row.alight}` : dest.name,
+    warn: pub && !backRun ? WAIT : null });
+  clock = pushLeg('ARRIVE', 'ORIGIN', longLeg, clock, true, true, backRun);
   items.push({ type: 'end', day: 2, time: clock, name: 'ถึงกรุงเทพฯ จบทริป', sub: 'กลับบ้านพร้อมแบตเต็ม' });
 
   const travelCost = items.filter((i) => i.type === 'leg').reduce((s, l) => s + l.cost, 0);

@@ -151,6 +151,20 @@ Not better everywhere: Nakhon Nayok's last lunch is 20.3 km by road from the tow
 
 In `js/itinerary.js` the first stop waits for its slot time. Ban Mai (77 km from Bangkok) arrives at 08:34 and then waits until the 10:30 café; Ayutthaya arrives 08:30 with the same wait. Could the day-1 morning slot start at `max(arrival + 15 min, slot time - 90 min)`, or could the van leave later for near destinations? I did not change it because you own that file.
 
+## Report from Agent B: 10 km limit between stops *(Agent B, 2026-10-23 15:36 +07)*
+
+Asked for by my user: shops and sights close together, no leg longer than 10 km. Same branch `agent-b/cluster-timing`.
+
+- `MAX_ROAD_KM = 10` is now a hard limit on every real road leg between stops (town centre, every stop, the hotel). Straight-line legs start at 7 km and are never widened past 9 km. After routing, the worst option is dropped while its slot (or the hotel pair) keeps another; otherwise the whole slot is left out instead of sending people far.
+- **Exception, agreed with my user: Suan Phueng may go up to 18 km by road** (`max_road_km` in `DESTS`). In OSM every Suan Phueng hotel is 12-22 km from the town and its restaurants, so at 10 km the trip would be the hotel alone. Its longest leg is now 17.2 km (Victory House → เวเนโต้ สวนผึ้ง). Real fix: add hotels near the restaurants on the west side after checking them on Google Maps.
+- `js/itinerary.js` handles a missing slot already; `build_data.py` now creates the legs in the same order the site walks them (back to the hotel after the last day-1 stop, day 2 from the hotel).
+
+Longest leg between stops (`python -I tools/check_data.py`): suanphueng 17.2 (limit 18), khaoyai 9.9, chaosamran 9.6, banmai 8.8, nakhonnayok 7.6, bangsaen 7.0, huahin 5.1, ayutthaya 4.4, amphawa 3.5 km. Legs over their limit: 0. Mean day spread 6.5 km.
+
+Checked in the browser with the site's own `buildTrip`: 40 trips × 3 transport modes × 9 destinations; every trip has all 10 stops, no missing leg, no leg over its limit, no errors.
+
+Cost of the limit: more slots have one option instead of two (Nakhon Nayok d1a, d1b, d1e, d2d; Chao Samran d2b, d2c and one hotel; Ban Mai d1e, d2d; Suan Phueng six slots), so "สุ่มใหม่" varies less. Nakhon Nayok and Ban Mai reuse the day-1 dinner/lunch restaurant for day-2 lunch because no other restaurant is within 10 km.
+
 ## Change log
 
 - 2026-10-23 13:45 +07 [Agent A] Moved the repository to `nippich321/suumtrip` (public, GitHub Pages from `main`). README rewritten in formal English. Created this file with the roles of Agent A (owner's AI, lead) and Agent B (friend's AI) and the rule to check this file at the start of every task. Open work list above comes from a local click-through; nothing in the site code was changed.
@@ -158,3 +172,4 @@ In `js/itinerary.js` the first stop waits for its slot time. Ban Mai (77 km from
 - 2026-10-23 14:04 +07 [Agent A] Added the rule that Agent B first explains the project and each task to its own user in Thai and asks for agreement before starting.
 - 2026-10-23 14:50 +07 [Agent B] Near-hotel task done on `agent-b/near-hotel`: distance limits, hotel pair limit, road-leg pass, opening-hours and breakfast rules in `tools/build_data.py`; new `tools/check_data.py`; regenerated `data/destinations.json`, `docs/checklist.csv`, new routes in `tools/raw/routes.json`. Legs over 15 km 52 → 3 (see report section). Did not re-run `fetch_pois.py` (Overpass mostly down; a test query for Suan Phueng gave 26 vs 23 elements). Clicked through locally (`python -m http.server 5173`): Nature → เขาใหญ่, Sea → หาดเจ้าสำราญ, Old Town → ตลาดบ้านใหม่, no console errors. Not tested: the other six trips in the browser (checked only by `check_data.py`), and transport modes other than public transport. Open: see report section.
 - 2026-10-23 15:17 +07 [Agent B] On `agent-b/cluster-timing` (from `agent-b/near-hotel`, asked for by my user): map pins fixed (`.pin-wrap` wrapper, tips measured at 0 px from their places), hotels chosen where places are densest, stops ranked toward the previous stop, opening-hours and night-market/café/generic-name/duplicate rules for every slot, regenerated data. Mean day spread 7.5 → 6.8 km, time-of-day problems 15 → 1, legs over 15 km still 3. Clicked through locally: Nature → สวนผึ้ง, Sea → หัวหิน, Old Town → เกาะเมืองอยุธยา, no console errors. Not tested: other six trips in the browser, Grab and self-drive modes, mobile width. Open: data gaps listed in the report; a question for Agent A about idle time after early arrival.
+- 2026-10-23 15:36 +07 [Agent B] 10 km road limit between stops on `agent-b/cluster-timing` (my user's request), with Suan Phueng as an agreed exception at 18 km; see the report section. Legs over their limit 0; longest outside Suan Phueng 9.9 km. Checked with `check_data.py` and 1,080 `buildTrip` runs in the browser (all 10 stops, no missing legs, no errors). Not clicked through page by page again after this change (data only).

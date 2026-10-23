@@ -3,7 +3,8 @@ places that do not fit their time of day, and breakfast picks.
 
 Usage: python -I tools/check_data.py
 Prints, per destination, the longest leg between consecutive stops (the Bangkok
-leg ORIGIN>ARRIVE is skipped), every leg over LIMIT_KM, the spread of each day
+leg ORIGIN>ARRIVE is skipped), every leg over its road limit (MAX_ROAD_KM, or a
+destination's own max_road_km exception), the spread of each day
 (largest straight-line km between any two places that day, hotels included),
 every time-of-day problem found, and the breakfast (d2b) options with their
 opening hours and OSM cuisine tag.
@@ -15,11 +16,10 @@ import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from build_data import (CAFE_NAME, GENERIC_SIGHT as GENERIC, MEAL_KINDS,  # noqa: E402
-                        NIGHT_PLACE as NIGHT, SUN_TIMES, dist_km, parse_hours, to_min)
+from build_data import (CAFE_NAME, DESTS, GENERIC_SIGHT as GENERIC, MAX_ROAD_KM,  # noqa: E402
+                        MEAL_KINDS, NIGHT_PLACE as NIGHT, SUN_TIMES, dist_km, parse_hours, to_min)
 
 DATA = HERE.parent / "data" / "destinations.json"
-LIMIT_KM = 15
 
 
 def time_problems(d):
@@ -82,13 +82,15 @@ def main():
         legs.sort(reverse=True)
         km, key = legs[0]
         a, b = key.split(">")
-        print(f"\n{d['id']} ({d['name']}): longest leg {km:.1f} km  {name(a)} -> {name(b)}")
+        limit = DESTS[d["id"]].get("max_road_km", MAX_ROAD_KM)
+        print(f"\n{d['id']} ({d['name']}): longest leg {km:.1f} km  {name(a)} -> {name(b)}"
+              + (f"  [exception: limit {limit} km]" if limit != MAX_ROAD_KM else ""))
         for km, key in legs:
-            if km <= LIMIT_KM:
+            if km <= limit:
                 break
             over += 1
             a, b = key.split(">")
-            print(f"  over {LIMIT_KM} km: {km:.1f} km  {name(a)} -> {name(b)}")
+            print(f"  over {limit} km: {km:.1f} km  {name(a)} -> {name(b)}")
         sp = day_spread(d)
         spreads += sp.values()
         print(f"  day spread: day 1 {sp[1]:.1f} km, day 2 {sp[2]:.1f} km")
@@ -103,7 +105,7 @@ def main():
                 kind = t.get("amenity") or t.get("shop") or p["kind"]
                 print(f"  breakfast: {p['name']} [{kind}, cuisine={t.get('cuisine') or '-'}] "
                       f"hours={p['hours'] or 'unknown'}")
-    print(f"\nlegs over {LIMIT_KM} km: {over}")
+    print(f"\nlegs over their limit: {over}")
     print(f"day spread: mean {sum(spreads) / len(spreads):.1f} km, max {max(spreads):.1f} km")
     print(f"time-of-day problems: {problems}")
 

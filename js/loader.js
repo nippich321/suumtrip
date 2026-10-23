@@ -1,9 +1,15 @@
 // Full-screen loading scene: the road scrolls by, the traveller's car drives in
 // and idles, and when the page is ready it revs and speeds off to the right.
-// Art was generated with Higgsfield; the car is a 12-frame sprite sheet made by
-// tools/animate_car.py. Timings live in css/style.css (ld-* keyframes).
+// The art is vector (img/loader/*.svg, built by tools/loader_art.py from the
+// Higgsfield pictures); sky, sun, road and dashes are drawn in css/style.css.
+// The layers scroll at different speeds (clouds slow, scene, road fastest).
+// The car is three pictures (body, dog head, wheel) moved separately on the GPU.
 
-const BACKGROUNDS = { nat: 'img/loader/bg-nat.webp', old: 'img/loader/bg-old.webp', sea: 'img/loader/bg-sea.webp' };
+const SCENES = {
+  nat: { src: 'img/loader/scene-nat.svg', sun: true },
+  old: { src: 'img/loader/scene-old.svg', sun: false },
+  sea: { src: 'img/loader/scene-sea.svg', sun: true },
+};
 const SUBTITLE = {
   self: 'น้องหมาพร้อม กระเป๋าพร้อม ออกเดินทาง!',
   pub: 'นั่งรถชิล ๆ เดี๋ยวก็ถึง',
@@ -14,28 +20,37 @@ const ARRIVED_MS = 3000; // road alone, then the car drives in (see .loader.read
 const HOLD_MS = 1000;    // the car idles a moment before it may leave
 const LEAVE_MS = 900;    // rev and speed off
 const FADE_MS = 450;
+const SUN = '<svg class="ld-sun" viewBox="-64 -64 128 128" aria-hidden="true"><circle r="63" fill="#feecbc"/><circle r="49" fill="#fbe18a"/></svg>';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const track = (cls, src) => `<div class="ld-track ${cls}"><img src="${src}" alt=""><img src="${src}" alt=""></div>`;
 
 // Shows the scene over the whole page. Call finish() when the page is ready;
 // the car leaves only after it has arrived and idled.
 export function showLoader(kind, title, { scene = 'nat' } = {}) {
+  const sc = SCENES[scene] || SCENES.nat;
   const el = document.createElement('div');
   el.className = 'loader';
   el.setAttribute('role', 'status');
   el.setAttribute('aria-label', title);
-  const bg = BACKGROUNDS[scene] || BACKGROUNDS.nat;
   el.innerHTML = `
-    <div class="ld-track" aria-hidden="true"><img src="${bg}" alt=""><img src="${bg}" alt=""></div>
+    <div class="ld-world" aria-hidden="true">
+      ${sc.sun ? SUN : ''}
+      ${track('ld-clouds', 'img/loader/clouds.svg')}
+      ${track('ld-scene', sc.src)}
+      <div class="ld-road"></div><div class="ld-dashes"></div>
+    </div>
     <div class="ld-caption"><p class="ld-text">${esc(title)}<span class="ld-dots"><i>.</i><i>.</i><i>.</i></span></p>
       <p class="ld-sub">${SUBTITLE[kind] || SUBTITLE.self}</p></div>
-    <div class="ld-car" aria-hidden="true"><img src="img/loader/car-dog.webp" alt=""></div>`;
+    <div class="ld-car" aria-hidden="true"><div class="ld-shadow"></div>
+      <div class="ld-bounce"><img src="img/loader/car-body.svg" alt=""><img class="ld-head" src="img/loader/car-head.svg" alt=""></div>
+      <img class="ld-wheel" src="img/loader/car-wheel.svg" alt=""><img class="ld-wheel ld-wheel2" src="img/loader/car-wheel.svg" alt=""></div>`;
   document.body.appendChild(el);
   document.documentElement.classList.add('ld-lock');
 
   let readyAt = null;
-  const img = el.querySelector('.ld-track img');
+  const img = el.querySelector('.ld-scene img');
   const ready = new Promise((res) => {
     const go = () => {
       if (readyAt !== null) return;

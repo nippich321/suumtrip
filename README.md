@@ -49,5 +49,5 @@ This creates a `dist/` folder that can be uploaded to Netlify, GitHub Pages or C
 - Places: © OpenStreetMap contributors (ODbL)
 - Map tiles: OpenFreeMap / OpenMapTiles
 - Routing: OSRM via routing.openstreetmap.de
-- Loading-screen art: generated with Higgsfield (Nano Banana 2) for this project; `tools/animate_car.py` turns the car picture into an animated sprite sheet
+- Loading-screen art: generated with Higgsfield (Nano Banana 2) for this project (`tools/art/`); `tools/loader_art.py` traces it to SVG (vtracer) and splits the car into body, dog head and wheels
 - The "regular" and "secret" room prices are illustrative figures only and have not been obtained from real hotels.

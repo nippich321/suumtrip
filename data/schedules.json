@@ -10,7 +10,7 @@
           "depart": "05:05",
           "arrive": "06:44",
           "last": null,
-          "days": "จ-ศ",
+          "days": "weekday",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -21,7 +21,7 @@
           "depart": "05:15",
           "arrive": "06:30",
           "last": null,
-          "days": "จ-ศ",
+          "days": "weekday",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -32,7 +32,7 @@
           "depart": "06:10",
           "arrive": "06:58",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -43,7 +43,7 @@
           "depart": "07:10",
           "arrive": "08:27",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -54,7 +54,7 @@
           "depart": "07:30",
           "arrive": "08:21",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -65,7 +65,7 @@
           "depart": "07:50",
           "arrive": "08:57",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -76,7 +76,7 @@
           "depart": "08:45",
           "arrive": "09:41",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -87,7 +87,7 @@
           "depart": "09:05",
           "arrive": "10:20",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -98,7 +98,7 @@
           "depart": "10:15",
           "arrive": "12:14",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         }
       ],
@@ -111,7 +111,7 @@
           "depart": "12:52",
           "arrive": "14:35",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -122,7 +122,7 @@
           "depart": "13:57",
           "arrive": "14:55",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -133,7 +133,7 @@
           "depart": "14:24",
           "arrive": "15:20",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -144,7 +144,7 @@
           "depart": "14:40",
           "arrive": "15:55",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -155,7 +155,7 @@
           "depart": "16:04",
           "arrive": "17:10",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -166,7 +166,7 @@
           "depart": "16:50",
           "arrive": "17:40",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -177,7 +177,7 @@
           "depart": "16:55",
           "arrive": "18:00",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -188,7 +188,7 @@
           "depart": "18:21",
           "arrive": "20:05",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -199,7 +199,7 @@
           "depart": "18:59",
           "arrive": "20:05",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -210,7 +210,7 @@
           "depart": "19:45",
           "arrive": "21:00",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         }
       ]
@@ -225,7 +225,7 @@
           "depart": "05:55",
           "arrive": "07:36",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -236,7 +236,7 @@
           "depart": "06:45",
           "arrive": "08:01",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -247,7 +247,7 @@
           "depart": "06:55",
           "arrive": "08:56",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -258,7 +258,7 @@
           "depart": "08:00",
           "arrive": "09:30",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -269,7 +269,7 @@
           "depart": "10:10",
           "arrive": "11:45",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         }
       ],
@@ -282,7 +282,7 @@
           "depart": "12:35",
           "arrive": "14:10",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -293,7 +293,7 @@
           "depart": "14:05",
           "arrive": "15:25",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -304,7 +304,7 @@
           "depart": "15:34",
           "arrive": "17:15",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -315,7 +315,7 @@
           "depart": "16:20",
           "arrive": "18:15",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -326,7 +326,7 @@
           "depart": "17:37",
           "arrive": "18:55",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -337,7 +337,7 @@
           "depart": "18:49",
           "arrive": "20:25",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         }
       ]
@@ -352,7 +352,7 @@
           "depart": "06:10",
           "arrive": "08:43",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -363,7 +363,7 @@
           "depart": "07:10",
           "arrive": "10:43",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         }
       ],
@@ -376,7 +376,7 @@
           "depart": "14:32",
           "arrive": "18:00",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -387,7 +387,7 @@
           "depart": "19:48",
           "arrive": "22:15",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         }
       ]
@@ -402,7 +402,7 @@
           "depart": "06:30",
           "arrive": "10:03",
           "last": null,
-          "days": "ส-อา",
+          "days": "weekend",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -413,7 +413,7 @@
           "depart": "07:20",
           "arrive": "10:39",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -424,7 +424,7 @@
           "depart": "07:30",
           "arrive": "09:45",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -435,7 +435,7 @@
           "depart": "09:20",
           "arrive": "12:47",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         }
       ],
@@ -448,7 +448,7 @@
           "depart": "13:54",
           "arrive": "17:25",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -459,7 +459,7 @@
           "depart": "15:25",
           "arrive": "18:05",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -470,7 +470,7 @@
           "depart": "15:52",
           "arrive": "19:20",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -481,7 +481,7 @@
           "depart": "17:27",
           "arrive": "20:15",
           "last": null,
-          "days": "ส-อา",
+          "days": "weekend",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         }
       ]
@@ -496,7 +496,7 @@
           "depart": "06:30",
           "arrive": "10:54",
           "last": null,
-          "days": "ส-อา",
+          "days": "weekend",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -507,7 +507,7 @@
           "depart": "07:20",
           "arrive": "11:46",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -518,7 +518,7 @@
           "depart": "07:30",
           "arrive": "10:31",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -529,7 +529,7 @@
           "depart": "09:20",
           "arrive": "13:50",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         }
       ],
@@ -542,7 +542,7 @@
           "depart": "12:47",
           "arrive": "17:25",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -553,7 +553,7 @@
           "depart": "14:36",
           "arrive": "18:05",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -564,7 +564,7 @@
           "depart": "14:56",
           "arrive": "19:20",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         },
         {
@@ -575,7 +575,7 @@
           "depart": "16:38",
           "arrive": "20:15",
           "last": null,
-          "days": "ส-อา",
+          "days": "weekend",
           "source": "https://www.railway.co.th/SRTTimetable/StationList (ดึงเมื่อ 2026-10-23)"
         }
       ]
@@ -590,7 +590,7 @@
           "depart": "06:30",
           "arrive": "07:30",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-bang-saen-ekkamai-burapha-minibus/"
         },
         {
@@ -601,7 +601,7 @@
           "depart": "07:30",
           "arrive": "08:30",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-bang-saen-ekkamai-burapha-minibus/"
         },
         {
@@ -612,7 +612,7 @@
           "depart": "08:30",
           "arrive": "09:30",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-bang-saen-ekkamai-burapha-minibus/"
         },
         {
@@ -623,7 +623,7 @@
           "depart": "10:00",
           "arrive": "11:00",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-bang-saen-ekkamai-burapha-minibus/"
         }
       ],
@@ -636,7 +636,7 @@
           "depart": "13:00",
           "arrive": "14:00",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-bang-saen-ekkamai-burapha-minibus/"
         },
         {
@@ -647,7 +647,7 @@
           "depart": "14:30",
           "arrive": "15:30",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-bang-saen-ekkamai-burapha-minibus/"
         },
         {
@@ -658,7 +658,7 @@
           "depart": "16:00",
           "arrive": "17:00",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-bang-saen-ekkamai-burapha-minibus/"
         },
         {
@@ -669,7 +669,7 @@
           "depart": "17:30",
           "arrive": "18:30",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-bang-saen-ekkamai-burapha-minibus/"
         },
         {
@@ -680,7 +680,7 @@
           "depart": "19:00",
           "arrive": "20:00",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-bang-saen-ekkamai-burapha-minibus/"
         }
       ]
@@ -695,7 +695,7 @@
           "depart": "05:40",
           "arrive": "",
           "last": "19:40",
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-amphawa-damneonsaduak-minibus/"
         },
         {
@@ -706,7 +706,7 @@
           "depart": "07:00",
           "arrive": "08:30",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-samutsongkram-maeklong/"
         },
         {
@@ -717,7 +717,7 @@
           "depart": "09:00",
           "arrive": "10:30",
           "last": null,
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-samutsongkram-maeklong/"
         }
       ],
@@ -730,7 +730,7 @@
           "depart": "04:00",
           "arrive": "",
           "last": "17:40",
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-amphawa-damneonsaduak-minibus/"
         },
         {
@@ -741,7 +741,7 @@
           "depart": "08:15",
           "arrive": "",
           "last": "18:15",
-          "days": "ทุกวัน",
+          "days": "all",
           "source": "https://gogo.town/en/route/bangkok-samutsongkram-maeklong/",
           "every": 75
         }

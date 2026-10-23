@@ -171,6 +171,8 @@ p { margin: 0 0 .8em; }
 .pin { position: absolute; top: 0; left: 0; width: 34px; height: 34px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); border: 2px solid #fff; background: var(--coral); color: #fff; box-shadow: 0 3px 10px rgba(0, 0, 0, .25); }
 .pin i { display: block; transform: rotate(45deg); font-size: 17px; line-height: 30px; }
 .pin span { position: absolute; top: -8px; right: -8px; transform: rotate(45deg); background: var(--ink); color: #fff; font-size: 10px; width: 17px; height: 17px; border-radius: 50%; line-height: 17px; }
+.pin { transition: opacity .25s ease, transform .25s ease; }
+.pin-wrap.near .pin { opacity: .18; transform: rotate(-45deg) scale(.7); } /* the 3D traveler is standing here */
 
 /* place popup */
 .maplibregl-popup-content { border-radius: 12px; font-family: var(--font); padding: 10px 14px; }

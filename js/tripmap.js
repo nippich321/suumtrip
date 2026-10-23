@@ -51,6 +51,8 @@ export function createTripMap(container, trip, { onStep } = {}) {
   let current = -1;
   let camBearing = -20;
 
+  const pins = [];
+  let travelerAt = null;
   const legs = items.map((it, i) => ({ it, i })).filter((x) => x.it.type === 'leg');
   const stops = items.map((it, i) => ({ it, i })).filter((x) => x.it.type === 'stop');
 
@@ -86,12 +88,30 @@ export function createTripMap(container, trip, { onStep } = {}) {
       const popup = new maplibregl.Popup({ offset: 44, closeButton: false }).setHTML(
         `<b>${it.poi.name}</b><br><span class="small muted">${it.slot.label}</span><br><a href="${gmaps}" target="_blank" rel="noopener">เปิดใน Google Maps</a>`);
       new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([it.poi.lon, it.poi.lat]).setPopup(popup).addTo(map);
+      pins.push({ el, lngLat: [it.poi.lon, it.poi.lat] });
     });
 
     map.addLayer(traveler.layer);
-    traveler.set({ lngLat: dest.center, visible: false });
+    place({ lngLat: dest.center, visible: false });
+    map.on('move', fadePins);
     fitLocal();
   });
+
+  // Pins are HTML drawn above the map, so the ones the traveler stands under fade out.
+  function fadePins() {
+    const p = travelerAt && map.project(travelerAt);
+    for (const pin of pins) {
+      const q = map.project(pin.lngLat);
+      pin.el.classList.toggle('near', !!p && Math.hypot(p.x - q.x, p.y - q.y) < 80);
+    }
+  }
+
+  function place(next) {
+    traveler.set(next);
+    if (next.visible === false) travelerAt = null;
+    else if (next.lngLat) travelerAt = next.lngLat;
+    fadePins();
+  }
 
   function fitLocal() {
     const pts = stops.map(({ it }) => [it.poi.lon, it.poi.lat]);
@@ -106,7 +126,7 @@ export function createTripMap(container, trip, { onStep } = {}) {
     const zoom = it.isLong ? 8.6 : it.vehicle === 'walk' ? 16.2 : 14.8;
     const startPos = it.geom[0];
     // change vehicle while the camera moves, then hop off when the leg starts
-    traveler.set({ lngLat: startPos, vehicle: it.vehicle, visible: true, size: it.isLong ? 1.6 : it.vehicle === 'walk' ? 1.8 : 1.1 });
+    place({ lngLat: startPos, vehicle: it.vehicle, visible: true, size: it.isLong ? 1.6 : it.vehicle === 'walk' ? 1.8 : 1.1 });
     map.easeTo({ center: startPos, zoom, pitch: it.isLong ? 45 : 62, duration: 900 });
     await sleep(950);
     traveler.go();
@@ -117,7 +137,7 @@ export function createTripMap(container, trip, { onStep } = {}) {
         const f = Math.min(1, (now - t0) / ms);
         const { pos, heading } = along(it.geom, total, it.isLong ? ease(f) : f);
         camBearing += 0.04;
-        traveler.set({ lngLat: pos, heading: heading + Math.PI, t: now / 1000 });
+        place({ lngLat: pos, heading: heading + Math.PI, t: now / 1000 });
         map.jumpTo({ center: pos, bearing: camBearing });
         if (f < 1) requestAnimationFrame(frame);
         else { traveler.stop(); resolve(true); }
@@ -140,7 +160,7 @@ export function createTripMap(container, trip, { onStep } = {}) {
         if (!ok) break;
       } else if (it.type === 'stop') {
         // the travellers get out and walk at every stop
-        traveler.set({ lngLat: [it.poi.lon, it.poi.lat], vehicle: 'walk', visible: true, size: 1.8 });
+        place({ lngLat: [it.poi.lon, it.poi.lat], vehicle: 'walk', visible: true, size: 1.8 });
         map.easeTo({ center: [it.poi.lon, it.poi.lat], zoom: 16.4, pitch: 64, duration: 700 });
         await sleep(1300);
       } else {
@@ -158,11 +178,11 @@ export function createTripMap(container, trip, { onStep } = {}) {
     current = i;
     const it = items[i];
     if (it.type === 'stop') {
-      traveler.set({ lngLat: [it.poi.lon, it.poi.lat], vehicle: 'walk', visible: true, size: 1.8 });
+      place({ lngLat: [it.poi.lon, it.poi.lat], vehicle: 'walk', visible: true, size: 1.8 });
       map.flyTo({ center: [it.poi.lon, it.poi.lat], zoom: 16.4, pitch: 64, duration: 900 });
     } else if (it.type === 'leg') {
       const b = it.geom.reduce((bb, p) => bb.extend(p), new maplibregl.LngLatBounds(it.geom[0], it.geom[0]));
-      traveler.set({ lngLat: it.geom[0], vehicle: it.vehicle, visible: true, size: it.isLong ? 1.6 : 1 });
+      place({ lngLat: it.geom[0], vehicle: it.vehicle, visible: true, size: it.isLong ? 1.6 : 1 });
       map.fitBounds(b, { padding: 70, pitch: 55, duration: 900, maxZoom: 16 });
     }
     onStep?.(i, false);

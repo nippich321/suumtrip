@@ -79,11 +79,11 @@ export function createTripMap(container, trip, { onStep } = {}) {
 
     stops.forEach(({ it }, n) => {
       const el = document.createElement('button');
-      el.className = 'pin';
+      el.className = 'pin-wrap';
       el.setAttribute('aria-label', it.poi.name);
-      el.innerHTML = `<i class="ti ${kindIcon(it.poi.kind)}"></i><span>${n + 1}</span>`;
+      el.innerHTML = `<div class="pin"><i class="ti ${kindIcon(it.poi.kind)}"></i><span>${n + 1}</span></div>`;
       const gmaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.poi.name)}&query_place_id=&center=${it.poi.lat},${it.poi.lon}`;
-      const popup = new maplibregl.Popup({ offset: 22, closeButton: false }).setHTML(
+      const popup = new maplibregl.Popup({ offset: 44, closeButton: false }).setHTML(
         `<b>${it.poi.name}</b><br><span class="small muted">${it.slot.label}</span><br><a href="${gmaps}" target="_blank" rel="noopener">เปิดใน Google Maps</a>`);
       new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([it.poi.lon, it.poi.lat]).setPopup(popup).addTo(map);
     });

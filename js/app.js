@@ -210,7 +210,7 @@ const screens = {
       setTimeout(() => {
         clearInterval(iv);
         S.dest = drawDestination();
-        S.trip = buildTrip(S.dest, { transport: S.transport, date: S.date, schedule: SCHED?.confirmed?.[S.dest.id] });
+        S.trip = buildTrip(S.dest, { transport: S.transport, date: S.date, schedule: SCHED?.confirmed?.[S.dest.id], transfer: SCHED?.transfers?.[S.dest.id] });
         cube.classList.remove('shake');
         cube.classList.add('open');
         rl.textContent = '';
@@ -289,7 +289,7 @@ function highlight(i, playing) {
   if (!hud || !it) return;
   document.getElementById('hudbar').style.width = `${((i + 1) / t.items.length) * 100}%`;
   if (it.type === 'leg') {
-    const v = VEHICLE[it.vehicle];
+    const v = it.label ? { label: it.label, icon: it.icon } : VEHICLE[it.vehicle];
     hud.innerHTML = `<span class="muted"><i class="ti ${v.icon}"></i> ${v.label} · ${fmtDur(it.sec)}</span><b>${it.isLong ? (it.to === 'ORIGIN' ? 'กลับกรุงเทพฯ' : `กรุงเทพฯ → ${esc(t.dest.name)}`) : 'กำลังไปจุดถัดไป'}</b>`;
   } else if (it.type === 'stop') {
     hud.innerHTML = `<span class="muted">${fmtTime(it.time)} · ${esc(it.slot.label)}</span><b>${esc(it.poi.name)}</b>`;

@@ -7,14 +7,18 @@ Writes docs/schedules.csv   - the check sheet. A person opens each source, check
                               writes ใช่ in "ยืนยันแล้ว" plus their name and the date. Ticks are
                               kept when this script runs again (rows are matched by "รหัส").
        data/schedules.json  - what the site reads: only rows ticked ใช่, plus, per destination,
-                              how many rows still wait for a check.
+                              how many rows still wait for a check, and, where the train station
+                              is far from the destination, the road legs of that transfer.
 """
 import csv
 import json
 import pathlib
 import re
+import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from build_data import DESTS, ORIGIN, dist_km, leg, route  # noqa: E402
 ROOT = HERE.parent
 SRT = HERE / "raw" / "schedules_srt.json"
 MANUAL = HERE / "schedules_manual.csv"
@@ -27,7 +31,8 @@ BACK_WINDOW = ("12:30", "20:00")   # leave the destination in the afternoon of d
 
 STATION_NAME = {"1000": "สถานีกลางกรุงเทพอภิวัฒน์", "1001": "สถานีกรุงเทพ (หัวลำโพง)", "1031": "สถานีอยุธยา",
                 "2093": "สถานีปากช่อง", "3023": "สถานีชุมทางฉะเชิงเทรา", "4101": "สถานีเพชรบุรี",
-                "4118": "สถานีหัวหิน"}
+                "4118": "สถานีหัวหิน", "4002": "สถานีธนบุรี"}
+TRANSFER_KM = 3  # a station farther than this (straight line) from the destination needs a ride
 DIR_TH = {"out": "ไป", "back": "กลับ"}
 DAYS_TH = {"all": "ทุกวัน", "weekday": "จ-ศ", "weekend": "ส-อา"}
 MODE_TH = {"train": "รถไฟ", "van": "รถตู้/มินิบัส", "bus": "รถบัส"}
@@ -37,7 +42,7 @@ HEAD = ["รหัส", "ปลายทาง", "ขา", "ประเภท",
 
 
 def days_of(note):
-    if re.search(r"จันทร์\s*-\s*ศุกร์", note):
+    if re.search(r"จันทร์\s*-\s*ศุกร์|วันทำงาน", note):
         return "weekday"
     if re.search(r"เสาร์\s*-\s*อาทิตย์|วันหยุด", note):
         return "weekend"
@@ -50,9 +55,9 @@ def within(t, window):
 
 def rows():
     srt = json.loads(SRT.read_text(encoding="utf-8"))
-    for dest, route in srt["routes"].items():
-        for d in ("out", "back"):
-            leg = route[d]
+    for dest, routes in srt["routes"].items():
+        for route_, d in ((r, d) for r in routes for d in ("out", "back")):
+            leg = route_[d]
             for t in leg["trains"]:
                 if not within(t["depart"], OUT_WINDOW if d == "out" else BACK_WINDOW):
                     continue
@@ -64,6 +69,24 @@ def rows():
                            source=f"{srt['source']} (ดึงเมื่อ {srt['fetched']})")
     with MANUAL.open(encoding="utf-8") as f:
         yield from csv.DictReader(f)
+
+
+def transfers():
+    """Road legs between each far-away station and its destination (OSRM, cached in routes.json)."""
+    srt = json.loads(SRT.read_text(encoding="utf-8"))
+    out = {}
+    for dest, routes in srt["routes"].items():
+        code = routes[0]["out"]["dest"]
+        st = srt["stations"][code]
+        here, town = (st["lon"], st["lat"]), DESTS[dest]["center"]
+        km = dist_km(here, town)
+        if km <= TRANSFER_KM:
+            continue
+        out[dest] = dict(station=STATION_NAME[code], lon=here[0], lat=here[1],
+                         toTown=leg(here, town), fromTown=leg(town, here), fromBangkok=route(ORIGIN, here, "drive"))
+        print(f"  transfer {dest}: {STATION_NAME[code]} {km:.1f} km from the destination, "
+              f"{out[dest]['toTown']['m'] / 1000:.1f} km by road")
+    return out
 
 
 def key(r):
@@ -97,8 +120,8 @@ def main():
     for v in confirmed.values():
         for d in v.values():
             d.sort(key=lambda x: x["depart"])
-    OUT.write_text(json.dumps(dict(confirmed=confirmed, pending=pending), ensure_ascii=False, indent=1),
-                   encoding="utf-8")
+    OUT.write_text(json.dumps(dict(confirmed=confirmed, pending=pending, transfers=transfers()),
+                              ensure_ascii=False), encoding="utf-8")
     n = sum(len(d) for v in confirmed.values() for d in v.values())
     print(f"wrote {SHEET} ({len(sheet)} rows) and {OUT} ({n} confirmed, {sum(pending.values())} waiting)")
 

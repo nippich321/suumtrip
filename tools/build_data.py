@@ -22,7 +22,10 @@ ROUTE_CACHE = RAW / "routes.json"
 ORIGIN = (100.5383, 13.7649)  # Victory Monument, Bangkok (lon, lat)
 
 DESTS = {
+    # Exception agreed with the user: OSM has every Suan Phueng hotel 12-22 km from the town and
+    # its restaurants, so its legs may go up to 18 km by road instead of MAX_ROAD_KM.
     "suanphueng": dict(name="สวนผึ้ง", province="ราชบุรี", cat="nat", gold=False, rack=1900,
+                       max_road_km=18, max_leg_km=22,
                        center=(99.345, 13.548), terminal="สถานีขนส่งสายใต้ (ตลิ่งชัน)"),
     "nakhonnayok": dict(name="นครนายก", province="นครนายก", cat="nat", gold=False, rack=1800,
                         center=(101.250, 14.250), terminal="สถานีขนส่งหมอชิต 2"),
@@ -63,8 +66,9 @@ MAX_KM_MEAL = 5
 MAX_KM_SIGHT = 8
 WIDEN_STEP_KM = 3
 WIDEN_MAX_STEPS = 4
-MAX_LEG_KM = 10  # straight-line km to the previous / next stop (roads add about a third)
-MAX_ROAD_KM = 15  # final check on the real road legs
+MAX_LEG_KM = 7  # straight-line km to the previous / next stop (roads add about a third)
+MAX_LEG_WIDEN_KM = 9  # straight-line legs are never widened past this
+MAX_ROAD_KM = 10  # hard limit on every real road leg between stops; a slot that cannot keep it is left out
 HOTEL_FROM_CENTER_KM = 15  # hotels go where places are densest, but stay this close to town
 HOTEL_PAIR_KM = 4  # the two hotel options must be this close, so the anchor is near both
 MEAL_KINDS = {"cafe", "food"}
@@ -342,6 +346,8 @@ def build(dest_id, meta):
     center = meta["center"]
     used = set()
     is_resort = (lambda p: p["tourism"] == "resort") if meta["gold"] else None
+    road_km = meta.get("max_road_km", MAX_ROAD_KM)
+    leg_cap = meta.get("max_leg_km", MAX_LEG_WIDEN_KM)
 
     def near_km(kinds, near, limit, accept=None, n=2):
         """Smallest limit (widened step by step) that has n candidates, and the steps taken."""
@@ -398,8 +404,9 @@ def build(dest_id, meta):
                 neighbours.append(center)
             limit = MAX_KM_MEAL if meal else MAX_KM_SIGHT
             # widen the area first, then settle for one option, and only then allow longer legs
-            tries = [(MAX_LEG_KM + ls * WIDEN_STEP_KM, limit + ks * WIDEN_STEP_KM, n)
-                     for ls in range(WIDEN_MAX_STEPS + 1) for n in (2, 1)
+            tries = [(leg_km, limit + ks * WIDEN_STEP_KM, n)
+                     for leg_km in (MAX_LEG_KM, MAX_LEG_WIDEN_KM, *range(MAX_LEG_WIDEN_KM + 3, leg_cap + 1, 3))
+                     for n in (2, 1)
                      for ks in range(WIDEN_MAX_STEPS + 1)]
             for step, (leg_km, km, n) in enumerate(tries):
 
@@ -411,20 +418,20 @@ def build(dest_id, meta):
             opts = choose_options(pool, s["kinds"], anchor, used, rng, n=n, ranked=s.get("ranked", False),
                                   max_km=km, accept=accept, prefer=prefer, toward=toward)
             if not opts and meal:  # a meal anywhere in the destination beats a sight at mealtime
-                opts = choose_options(pool, sorted(MEAL_KINDS), anchor, used, rng, n=1, accept=fits,
+                opts = choose_options(pool, sorted(MEAL_KINDS), anchor, used, rng, n=1, accept=accept,
                                       toward=toward)
                 if opts:
                     notes.append(f"{s['id']} filled from the whole destination")
             if not opts and meal:  # last resort: a restaurant from the other day
-                again = [by_id[pid] for pid in day1_meals if fits(by_id[pid])]
+                again = [by_id[pid] for pid in day1_meals if accept(by_id[pid])]
                 again.sort(key=lambda p: rank(anchor, p, toward))
                 opts = again[:1]
                 if opts:
                     notes.append(f"{s['id']} reuses {opts[0]['name']} from day 1")
             if not opts:  # widen to any sight-like place
                 opts = choose_options(pool, ["sight", "temple", "park", "market", "view", "museum"],
-                                      anchor, used, rng, max_km=km, accept=fits, toward=toward)
-                notes.append(f"{s['id']} filled with sights")
+                                      anchor, used, rng, accept=accept, toward=toward)
+                notes.append(f"{s['id']} filled with sights" if opts else f"{s['id']} left out (nothing near)")
             if step:
                 notes.append(f"{s['id']} widened to {km} km, legs {leg_km} km, {n} option(s)")
         prev = [(p["lon"], p["lat"]) for p in opts] or prev
@@ -438,33 +445,45 @@ def build(dest_id, meta):
     def coord(pid):
         return center if pid == "ARRIVE" else (by_id[pid]["lon"], by_id[pid]["lat"])
 
-    # sequence of option lists between which legs are needed (the lists are the slots' own)
-    seq = [["ARRIVE"]]
-    for s in slots:
-        if s["id"] == "d2a":  # day 2 starts from the hotel
-            seq.append(slots_by(slots, "hotel"))
-        seq.append(s["options"])
-        if s["id"] == "d1e":  # back to the hotel after dinner
-            seq.append(slots_by(slots, "hotel"))
-    seq.append(["ARRIVE"])
+    hotel_opts = slots_by(slots, "hotel")
 
-    # The limits above are straight-line; drop options whose real road leg to a neighbouring
-    # stop is longer than MAX_ROAD_KM, worst first, as long as the slot keeps one option.
-    owner = {pid: s for s in slots for pid in s["options"]}
+    def sequence():
+        """Option lists between which legs are needed, in the order js/itinerary.js walks them:
+        the night is at the hotel, and day 2 starts there (the lists are the slots' own)."""
+        seq, day = [["ARRIVE"]], 1
+        for s in slots:
+            if s["day"] == 2 and day == 1:
+                if seq[-1] is not hotel_opts:
+                    seq.append(hotel_opts)
+                day = 2
+            seq.append(s["options"])
+        seq.append(["ARRIVE"])
+        return seq
+
+    # The limits above are straight-line; enforce MAX_ROAD_KM on the real road legs. Drop the
+    # worst option first while its slot keeps another one (a hotel option too), otherwise leave
+    # the whole slot out (never the hotel).
     while True:
+        owner = {pid: s for s in slots for pid in s["options"]}
         bad = {}
-        for A, B in zip(seq, seq[1:]):
+        for A, B in zip(sequence(), sequence()[1:]):
             for a in A:
                 for b in B:
-                    if a != b and leg(coord(a), coord(b))["m"] > MAX_ROAD_KM * 1000:
+                    if a != b and leg(coord(a), coord(b))["m"] > road_km * 1000:
                         for pid in (a, b):
-                            if pid in owner and len(owner[pid]["options"]) > 1:
+                            if pid in owner and (owner[pid]["id"] != "hotel" or len(owner[pid]["options"]) > 1):
                                 bad[pid] = bad.get(pid, 0) + 1
         if not bad:
             break
-        pid = max(bad, key=bad.get)
-        owner[pid]["options"].remove(pid)
-        notes.append(f"dropped {by_id[pid]['name']} from {owner[pid]['id']} (road leg over {MAX_ROAD_KM} km)")
+        pid = max(bad, key=lambda q: (len(owner[q]["options"]) > 1, bad[q]))
+        s = owner[pid]
+        if len(s["options"]) > 1:
+            s["options"].remove(pid)
+            notes.append(f"dropped {by_id[pid]['name']} from {s['id']} (road leg over {road_km} km)")
+        else:
+            slots.remove(s)
+            notes.append(f"left out {s['id']} ({by_id[pid]['name']} is over {road_km} km by road)")
+    seq = sequence()
 
     for s in slots:
         if s["id"] != "hotel" and any(k in MEAL_KINDS for k in s["kinds"]) and ":" in s["time"]:

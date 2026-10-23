@@ -323,7 +323,7 @@ html.ld-lock, html.ld-lock body { overflow: hidden; }
 .trcard .d { font-size: 13px; color: var(--muted); }
 .stop .warn { font-size: 12px; color: var(--gold-ink); background: var(--sun-soft); border-radius: 8px; padding: 2px 8px; margin-top: 4px; display: inline-block; }
 @media (max-width: 760px) {
-  .wiz { grid-template-columns: 1fr; gap: 14px; }
+  .wiz { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .wiz-side { position: static; padding: 10px; }
   .wiz-title { display: none; }
   .wiz-side ol { display: flex; overflow-x: auto; gap: 6px; }

@@ -193,8 +193,8 @@ const screens = {
     app.innerHTML = `
     <section class="screen open-stage">
       ${steps(4)}
-      <h2>แตะกล่องเพื่อเปิด</h2>
-      <p class="muted">ข้างในคือทริปทั้งทริปของคุณ</p>
+      <h2 id="openh">แตะกล่องเพื่อเปิด</h2>
+      <p class="muted" id="opensub">ข้างในคือทริปทั้งทริปของคุณ</p>
       <div style="position:relative">${boxHtml('the-box')}<div id="fx"></div></div>
       <div class="roulette" id="roulette">&nbsp;</div>
       <div id="reveal"></div>
@@ -214,11 +214,14 @@ const screens = {
         cube.classList.remove('shake');
         cube.classList.add('open');
         rl.textContent = '';
+        opened();
         confetti(app.querySelector('#fx'), S.dest.gold);
         showReveal();
       }, 2300);
     };
-    if (S.trip) { cube.classList.add('open'); showReveal(); }
+    // once open, the heading stops asking to tap the box
+    const opened = () => { app.querySelector('#openh').textContent = 'เปิดกล่องแล้ว!'; app.querySelector('#opensub').textContent = 'นี่คือทริปของคุณ'; };
+    if (S.trip) { cube.classList.add('open'); opened(); showReveal(); }
   },
 
   trip() {

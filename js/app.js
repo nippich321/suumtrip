@@ -193,25 +193,26 @@ const screens = {
     if (!S.trip) return go('choose');
     const t = S.trip;
     app.innerHTML = `
-    <section class="screen wide">
+    <section class="screen wide trip-screen">
       <div class="trip">
         <div class="mapwrap">
           <div id="map"></div>
           <div class="mode-chip" id="modechip"><i class="ti ti-map-2"></i> ${esc(t.dest.name)} · ${esc(t.dest.province)}</div>
           <div class="map-hud">
-            <div class="hud-card" id="hud"><span class="muted">กดเล่นเพื่อดูทริปทั้งเส้นทาง</span><b>${esc(t.dest.name)} 2 วัน 1 คืน</b></div>
+            <div class="hud-card"><div id="hud"><span class="muted">กดเล่นเพื่อดูทริปทั้งเส้นทาง</span><b>${esc(t.dest.name)} 2 วัน 1 คืน</b></div>
+              <div class="hud-progress" aria-hidden="true"><span id="hudbar"></span></div></div>
             <button class="hud-btn" id="playbtn" aria-label="เล่นทริป"><i class="ti ti-player-play"></i></button>
           </div>
         </div>
         <div class="timeline">
           <div class="tl-head"><div><h3 style="margin:0">ทริปของคุณ</h3><span class="small muted">${thaiDate(t.date)} · ${TRANSPORT[t.transport].label}</span></div>
             <a class="btn btn-ghost" href="#choose" style="padding:8px 14px;font-size:14px"><i class="ti ti-refresh"></i> สุ่มใหม่</a></div>
-          ${timelineHtml(t)}
-          <div class="summary">
-            <div><span>ที่พัก</span><b>${esc(t.hotel.name)}</b></div>
-            <div><span>ค่าเดินทางโดยประมาณ (ต่อคน)</span><b>~${fmt(t.travelCost)} บาท</b></div>
-            <div><span>พระอาทิตย์ตก (วันแรก)</span><b>${fmtTime(t.sun1.sunset)}</b></div>
+          <div class="trip-chips">
+            <span title="ที่พัก"><i class="ti ti-bed"></i> ${esc(t.hotel.name)}</span>
+            <span title="ค่าเดินทางโดยประมาณ ต่อคน"><i class="ti ti-coin"></i> ~${fmt(t.travelCost)} บาท/คน</span>
+            <span title="พระอาทิตย์ตก วันแรก"><i class="ti ti-sunset-2"></i> ตก ${fmtTime(t.sun1.sunset)}</span>
           </div>
+          ${timelineHtml(t)}
           <div class="verify"><i class="ti ti-info-circle"></i> สถานที่ทั้งหมดดึงจากข้อมูลจริงของ OpenStreetMap ส่วนเวลาเดินทางคำนวณจากถนนจริง เวลาเปิดร้านและรอบรถยังต้องเช็กก่อนเดินทาง</div>
         </div>
       </div>
@@ -254,6 +255,7 @@ function highlight(i, playing) {
   const it = t.items[i];
   const hud = document.getElementById('hud');
   if (!hud || !it) return;
+  document.getElementById('hudbar').style.width = `${((i + 1) / t.items.length) * 100}%`;
   if (it.type === 'leg') {
     const v = VEHICLE[it.vehicle];
     hud.innerHTML = `<span class="muted"><i class="ti ${v.icon}"></i> ${v.label} · ${fmtDur(it.sec)}</span><b>${it.isLong ? (it.to === 'ORIGIN' ? 'กลับกรุงเทพฯ' : `กรุงเทพฯ → ${esc(t.dest.name)}`) : 'กำลังไปจุดถัดไป'}</b>`;

@@ -126,7 +126,7 @@ export function createTripMap(container, trip, { onStep } = {}) {
     const zoom = it.isLong ? 8.6 : it.vehicle === 'walk' ? 16.2 : 14.8;
     const startPos = it.geom[0];
     // change vehicle while the camera moves, then hop off when the leg starts
-    place({ lngLat: startPos, vehicle: it.vehicle, visible: true, size: it.isLong ? 1.6 : it.vehicle === 'walk' ? 1.8 : 1.1 });
+    place({ lngLat: startPos, vehicle: it.vehicle, visible: true, size: it.isLong ? 0.9 : it.vehicle === 'walk' ? 1.8 : 1.1 });
     map.easeTo({ center: startPos, zoom, pitch: it.isLong ? 45 : 62, duration: 900 });
     await sleep(950);
     traveler.go();
@@ -182,7 +182,7 @@ export function createTripMap(container, trip, { onStep } = {}) {
       map.flyTo({ center: [it.poi.lon, it.poi.lat], zoom: 16.4, pitch: 64, duration: 900 });
     } else if (it.type === 'leg') {
       const b = it.geom.reduce((bb, p) => bb.extend(p), new maplibregl.LngLatBounds(it.geom[0], it.geom[0]));
-      place({ lngLat: it.geom[0], vehicle: it.vehicle, visible: true, size: it.isLong ? 1.6 : 1 });
+      place({ lngLat: it.geom[0], vehicle: it.vehicle, visible: true, size: it.isLong ? 0.9 : 1.1 });
       map.fitBounds(b, { padding: 70, pitch: 55, duration: 900, maxZoom: 16 });
     }
     onStep?.(i, false);

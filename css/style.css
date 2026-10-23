@@ -138,15 +138,28 @@ p { margin: 0 0 .8em; }
 .mapwrap { position: relative; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); background: #dfe9e4; height: min(62vh, 560px); }
 @media (max-width: 899px) { .mapwrap { height: 52vh; margin: 0 -16px; border-radius: 0; } }
 #map { position: absolute; inset: 0; }
-.map-hud { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; gap: 8px; align-items: center; z-index: 5; }
-.hud-card { flex: 1; background: rgba(255, 255, 255, .95); border-radius: 14px; padding: 8px 12px; font-size: 13px; box-shadow: var(--shadow); min-width: 0; }
+.map-hud { position: absolute; left: 12px; right: 12px; bottom: 30px; display: flex; gap: 8px; align-items: center; z-index: 5; }
+.hud-card { position: relative; overflow: hidden; flex: 1; background: rgba(255, 255, 255, .95); border-radius: 14px; padding: 8px 12px 10px; font-size: 13px; box-shadow: var(--shadow); min-width: 0; }
+.hud-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--line); }
+.hud-progress span { display: block; width: 0; height: 100%; background: var(--coral); transition: width .4s ease; }
 .hud-card b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hud-btn { width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--coral); color: #fff; font-size: 22px; box-shadow: var(--shadow); flex: none; }
 .mode-chip { position: absolute; top: 12px; left: 12px; z-index: 5; background: rgba(255, 255, 255, .95); border-radius: 999px; padding: 4px 12px; font-size: 13px; box-shadow: var(--shadow); }
 
 .timeline { background: var(--card); border-radius: 20px; padding: 6px 16px 16px; box-shadow: var(--shadow); }
 .tl-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
-.day-h { font-family: var(--display); font-size: 15px; color: var(--coral); margin: 14px 0 4px; }
+.day-h { position: sticky; top: 53px; z-index: 3; font-family: var(--display); font-size: 15px; color: var(--coral); margin: 10px 0 2px; padding: 6px 0; background: var(--card); border-bottom: 1px solid var(--line); }
+.trip-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.trip-chips span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+.trip-chips i { color: var(--coral); vertical-align: -2px; }
+/* desktop: full-screen map with the timeline as a side panel that scrolls on its own */
+@media (min-width: 900px) {
+  .screen.trip-screen { max-width: none; margin: 0 -16px -48px; padding: 0; animation: none; }
+  .trip-screen .trip { grid-template-columns: minmax(0, 1fr) 440px; gap: 0; height: calc(100dvh - 53px); align-items: stretch; }
+  .trip-screen .mapwrap { position: relative; top: auto; height: 100%; border-radius: 0; box-shadow: none; }
+  .trip-screen .timeline { height: 100%; overflow-y: auto; border-radius: 0; padding: 4px 20px 24px; box-shadow: -8px 0 24px rgba(60, 30, 20, .08); }
+  .trip-screen .day-h { top: 0; }
+}
 .stop { display: grid; grid-template-columns: 52px 22px 1fr; gap: 6px; padding: 6px 0; cursor: pointer; border-radius: 10px; }
 .stop:hover { background: #fff6f1; }
 .stop .tm { font-weight: 600; font-size: 14px; padding-top: 2px; }

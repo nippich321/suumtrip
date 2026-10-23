@@ -35,10 +35,10 @@ const peopleText = () => `ผู้ใหญ่ ${S.who.adults}${S.who.kids ? ` 
 const thaiDate = (iso) => new Date(iso).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
 
 const WIZ = [
-  { id: 'choose', label: 'วิธีเดินทาง', value: () => TRANSPORT[S.transport].label },
   { id: 'cat', label: 'แนวทริป', value: () => CATEGORIES[S.cat].label },
-  { id: 'date', label: 'วันเดินทาง', value: () => thaiDate(S.date) },
   { id: 'who', label: 'ผู้เดินทาง', value: () => peopleText() },
+  { id: 'choose', label: 'วิธีเดินทาง', value: () => TRANSPORT[S.transport].label },
+  { id: 'date', label: 'วันเดินทาง', value: () => thaiDate(S.date) },
   { id: 'cands', label: 'ปลายทางที่อาจได้', value: () => (S.veto ? 'ตัดทิ้ง 1 ที่' : '') },
   { id: 'pay', label: 'ชำระเงิน', value: () => '' },
 ];
@@ -76,7 +76,7 @@ function wizard(id, body, still = false) {
     </section>`;
 }
 
-const nextBtn = (to, label = 'ต่อไป') => `<div class="wiz-next">${WIZ.findIndex((w) => w.id === to) > 1 ? `<a class="btn btn-ghost" href="#${WIZ[WIZ.findIndex((w) => w.id === to) - 2].id}">ย้อนกลับ</a>` : ''}<a class="btn btn-primary" href="#${to}">${label}</a></div>`;
+const nextBtn = (to, label = 'ต่อไป') => `<div class="wiz-next">${WIZ.findIndex((w) => w.id === to) > 0 ? `<a class="btn btn-ghost" href="#${WIZ[WIZ.findIndex((w) => w.id === to) - 1].id}">ย้อนกลับ</a>` : ''}<a class="btn btn-primary" href="#${to}">${label}</a></div>`;
 
 function steps(n) {
   return `<div class="steps" aria-label="ขั้นที่ ${n} จาก 5">${[1, 2, 3, 4, 5].map((i) => `<span class="${i <= n ? 'on' : ''}"></span>`).join('')}</div>`;
@@ -137,7 +137,7 @@ const screens = {
       <p class="muted">ออกจากกรุงเทพฯ ไม่เกิน 4 ชม. ไม่ต้องเลือกจังหวัด เดี๋ยวกล่องเลือกให้</p>
       <div class="trcards">${cards}</div>
       <p class="fine" id="trnote" ${S.transport === 'pub' ? '' : 'hidden'}><i class="ti ti-clock"></i> ขาไปและขากลับใช้เวลารถไฟ/รถตู้จากตารางจริง ทีมงานตรวจทุกรอบก่อนแสดงในแผน</p>
-      ${nextBtn('cat')}`);
+      ${nextBtn('date')}`);
     app.querySelectorAll('[data-tr]').forEach((b) => (b.onclick = () => {
       S.transport = b.dataset.tr;
       pickIn('data-tr', S.transport);
@@ -153,7 +153,7 @@ const screens = {
       <h2>อยากได้ทริปแนวไหน?</h2>
       <p class="muted">เลือกแค่แนว ที่เหลือกล่องจัดให้</p>
       <div class="opts three">${catHtml}</div>
-      ${nextBtn('date')}`);
+      ${nextBtn('who')}`);
     app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { S.cat = b.dataset.cat; S.veto = null; pickIn('data-cat', S.cat); refreshSide('cat'); }));
   },
 
@@ -164,7 +164,7 @@ const screens = {
       <p class="muted">เลือกวันไป วันกลับคือวันถัดไป (2 วัน 1 คืน)</p>
       <div id="date"></div>
       <div class="opt opt-row" id="dayprice" style="box-shadow:none;background:transparent;padding:0;margin-top:10px">${dayPrice()}</div>
-      ${nextBtn('who')}`);
+      ${nextBtn('cands', 'ดูปลายทางที่อาจได้')}`);
     mountDatePicker(app.querySelector('#date'), {
       value: S.date, min: localIso(new Date()),
       priceFor: (iso) => (isWeekend(iso) ? CONFIG.prices.weekend : CONFIG.prices.weekday),
@@ -202,7 +202,7 @@ const screens = {
         </div>
         <p class="fine"><b class="req">*</b> จำเป็นต้องกรอกเมื่อเปิดขายจริง ตอนนี้เว็บอยู่ระหว่างพัฒนา จึงข้ามไปก่อนได้ · ข้อมูลอยู่ในเบราว์เซอร์นี้เท่านั้น ยังไม่ได้ส่งไปที่ไหน</p>
       </div>
-      ${nextBtn('cands', 'ดูปลายทางที่อาจได้')}`);
+      ${nextBtn('choose', 'ต่อไป')}`);
     const note = () => {
       const n = W.adults + W.kids;
       app.querySelector('#pplnote').textContent = n === 2

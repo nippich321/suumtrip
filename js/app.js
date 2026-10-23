@@ -36,18 +36,35 @@ const WIZ = [
   { id: 'pay', label: 'ชำระเงิน', value: () => '' },
 ];
 
-function wizard(id, body) {
-  const n = WIZ.findIndex((w) => w.id === id);
-  S.reached = Math.max(S.reached, n);
-  const list = WIZ.map((w, i) => {
+// The step list on the left; picking something on a page updates only this list and the
+// picked card (no re-render), so the page does not blink.
+function wizList(n) {
+  return WIZ.map((w, i) => {
     const state = i === n ? 'now' : i <= S.reached ? 'done' : 'todo';
     const inner = `<span class="wiz-dot">${state === 'done' ? '<i class="ti ti-check"></i>' : ''}</span>
       <span class="wiz-txt"><span>${w.label}</span>${state === 'done' && w.value() ? `<b>${esc(w.value())}</b>` : ''}</span>`;
     return state === 'done' ? `<li class="done"><a href="#${w.id}">${inner}</a></li>` : `<li class="${state}" ${state === 'now' ? 'aria-current="step"' : ''}>${inner}</li>`;
   }).join('');
+}
+
+const refreshSide = (id) => { app.querySelector('.wiz-side ol').innerHTML = wizList(WIZ.findIndex((w) => w.id === id)); };
+
+// pick one card of a group in place: the chosen one is .on and aria-pressed
+function pickIn(attr, value) {
+  app.querySelectorAll(`[${attr}]`).forEach((b) => {
+    const on = b.getAttribute(attr) === value;
+    b.classList.toggle('on', on);
+    if (b.hasAttribute('aria-pressed')) b.setAttribute('aria-pressed', on);
+  });
+}
+
+// still: the same page drawn again (no entry animation)
+function wizard(id, body, still = false) {
+  const n = WIZ.findIndex((w) => w.id === id);
+  S.reached = Math.max(S.reached, n);
   return `
-    <section class="screen wide wiz">
-      <aside class="wiz-side"><div class="wiz-title">กล่องสุ่มทริปของคุณ</div><ol>${list}</ol></aside>
+    <section class="screen wide wiz ${still ? 'still' : ''}">
+      <aside class="wiz-side"><div class="wiz-title">กล่องสุ่มทริปของคุณ</div><ol>${wizList(n)}</ol></aside>
       <div class="wiz-main">${body}</div>
     </section>`;
 }
@@ -112,9 +129,14 @@ const screens = {
       <h2>เดินทางแบบไหนดี?</h2>
       <p class="muted">ออกจากกรุงเทพฯ ไม่เกิน 4 ชม. ไม่ต้องเลือกจังหวัด เดี๋ยวกล่องเลือกให้</p>
       <div class="trcards">${cards}</div>
-      ${S.transport === 'pub' ? '<p class="fine"><i class="ti ti-clock"></i> ขาไปและขากลับใช้เวลารถไฟ/รถตู้จากตารางจริง ทีมงานตรวจทุกรอบก่อนแสดงในแผน</p>' : ''}
+      <p class="fine" id="trnote" ${S.transport === 'pub' ? '' : 'hidden'}><i class="ti ti-clock"></i> ขาไปและขากลับใช้เวลารถไฟ/รถตู้จากตารางจริง ทีมงานตรวจทุกรอบก่อนแสดงในแผน</p>
       ${nextBtn('cat')}`);
-    app.querySelectorAll('[data-tr]').forEach((b) => (b.onclick = () => { S.transport = b.dataset.tr; screens.choose(); }));
+    app.querySelectorAll('[data-tr]').forEach((b) => (b.onclick = () => {
+      S.transport = b.dataset.tr;
+      pickIn('data-tr', S.transport);
+      app.querySelector('#trnote').hidden = S.transport !== 'pub';
+      refreshSide('choose');
+    }));
   },
 
   cat() {
@@ -125,7 +147,7 @@ const screens = {
       <p class="muted">เลือกแค่แนว ที่เหลือกล่องจัดให้</p>
       <div class="opts three">${catHtml}</div>
       ${nextBtn('date')}`);
-    app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { S.cat = b.dataset.cat; S.veto = null; screens.cat(); }));
+    app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { S.cat = b.dataset.cat; S.veto = null; pickIn('data-cat', S.cat); refreshSide('cat'); }));
   },
 
   date() {
@@ -143,7 +165,7 @@ const screens = {
     });
   },
 
-  cands() {
+  cands(still = false) {
     const list = candidates();
     app.innerHTML = wizard('cands', `
       <h2>กล่อง${CATEGORIES[S.cat].label}นี้ อาจได้ไป…</h2>
@@ -161,8 +183,8 @@ const screens = {
         <div><span>กล่องสุ่มทริป 2 วัน 1 คืน (2 คน)</span><b>${fmt(price())} บาท</b></div>
       </div>
       <button class="btn btn-primary btn-block" id="buy" style="margin-top:16px">ซื้อกล่องนี้ ${fmt(price())} บาท</button>
-      <p class="fine">ราคารวมที่พัก 1 คืน และแผนเที่ยวครบทุกช่วง ไม่รวมค่าเดินทางและค่าอาหาร (มีประมาณการให้ในแผน)</p>`);
-    app.querySelectorAll('[data-veto]').forEach((b) => (b.onclick = () => { S.veto = S.veto === b.dataset.veto ? null : b.dataset.veto; screens.cands(); }));
+      <p class="fine">ราคารวมที่พัก 1 คืน และแผนเที่ยวครบทุกช่วง ไม่รวมค่าเดินทางและค่าอาหาร (มีประมาณการให้ในแผน)</p>`, still);
+    app.querySelectorAll('[data-veto]').forEach((b) => (b.onclick = () => { S.veto = S.veto === b.dataset.veto ? null : b.dataset.veto; screens.cands(true); }));
     app.querySelector('#buy').onclick = () => go('pay');
   },
 

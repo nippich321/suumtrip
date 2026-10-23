@@ -308,7 +308,11 @@ html.ld-lock, html.ld-lock body { overflow: hidden; }
 .wiz-side li.done .wiz-dot { border-color: var(--teal); color: var(--teal); font-size: 15px; }
 .wiz-txt { display: flex; flex-direction: column; line-height: 1.3; }
 .wiz-txt b { color: var(--ink); font-weight: 600; font-size: 15px; }
-.wiz-main { min-width: 0; padding-top: 4px; }
+.wiz-main { min-width: 0; padding-top: 4px; animation: step-in .22s ease-out; }
+/* between booking steps the step list stays put and only the page content slides in */
+.screen.wiz { animation: none; }
+.screen.wiz.still .wiz-main { animation: none; }
+@keyframes step-in { from { opacity: .55; transform: translateX(10px); } to { opacity: 1; transform: none; } }
 .wiz-next { display: flex; justify-content: center; gap: 10px; margin-top: 24px; }
 .wiz-next .btn { min-width: 160px; }
 .trcards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }

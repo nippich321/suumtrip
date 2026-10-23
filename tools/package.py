@@ -12,7 +12,7 @@ if DIST.exists():
     shutil.rmtree(DIST)
 DIST.mkdir()
 shutil.copy2(ROOT / "index.html", DIST / "index.html")
-for folder in ("css", "js", "data", "img"):
+for folder in ("css", "js", "data", "img", "assets"):
     shutil.copytree(ROOT / folder, DIST / folder)
 size = sum(p.stat().st_size for p in DIST.rglob("*") if p.is_file())
 print(f"dist/ ready: {size // 1024} KB")

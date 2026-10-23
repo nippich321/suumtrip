@@ -105,9 +105,11 @@ export function createTripMap(container, trip, { onStep } = {}) {
     const ms = it.isLong ? 7000 : Math.min(6500, Math.max(2600, total * (it.vehicle === 'walk' ? 6 : 1.1)));
     const zoom = it.isLong ? 8.6 : it.vehicle === 'walk' ? 16.2 : 14.8;
     const startPos = it.geom[0];
+    // change vehicle while the camera moves, then hop off when the leg starts
+    traveler.set({ lngLat: startPos, vehicle: it.vehicle, visible: true, size: it.isLong ? 1.6 : it.vehicle === 'walk' ? 1.8 : 1.1 });
     map.easeTo({ center: startPos, zoom, pitch: it.isLong ? 45 : 62, duration: 900 });
     await sleep(950);
-    traveler.set({ vehicle: it.vehicle, visible: true, size: it.isLong ? 1.6 : it.vehicle === 'walk' ? 1.8 : 1.1 });
+    traveler.go();
     const t0 = performance.now();
     return new Promise((resolve) => {
       const frame = (now) => {
@@ -118,7 +120,7 @@ export function createTripMap(container, trip, { onStep } = {}) {
         traveler.set({ lngLat: pos, heading: heading + Math.PI, t: now / 1000 });
         map.jumpTo({ center: pos, bearing: camBearing });
         if (f < 1) requestAnimationFrame(frame);
-        else resolve(true);
+        else { traveler.stop(); resolve(true); }
       };
       requestAnimationFrame(frame);
     });
@@ -137,6 +139,8 @@ export function createTripMap(container, trip, { onStep } = {}) {
         const ok = await animateLeg(it);
         if (!ok) break;
       } else if (it.type === 'stop') {
+        // the travellers get out and walk at every stop
+        traveler.set({ lngLat: [it.poi.lon, it.poi.lat], vehicle: 'walk', visible: true, size: 1.8 });
         map.easeTo({ center: [it.poi.lon, it.poi.lat], zoom: 16.4, pitch: 64, duration: 700 });
         await sleep(1300);
       } else {

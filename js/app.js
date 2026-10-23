@@ -361,7 +361,12 @@ const screens = {
 };
 
 function chipsHtml(t) {
+  const startLeg = t.items.find((i) => i.type === 'leg' && i.isLong);
+  const endLeg = [...t.items].reverse().find((i) => i.type === 'leg' && i.isLong);
+  const startTime = startLeg ? fmtTime(startLeg.start) : '—';
+  const endTime = endLeg ? fmtTime(endLeg.end) : '—';
   return `<span title="ที่พัก"><i class="ti ti-bed"></i> ${esc(t.hotel.name)}</span>
+    <span title="เดินทาง"><i class="ti ti-bus"></i> ${startTime}–${endTime}</span>
     <span title="ค่าเดินทางโดยประมาณ ต่อคน"><i class="ti ti-coin"></i> ~${fmt(t.travelCost)} บาท/คน</span>
     <span title="พระอาทิตย์ตก วันแรก"><i class="ti ti-sunset-2"></i> ตก ${fmtTime(t.sun1.sunset)}</span>`;
 }

@@ -14,6 +14,8 @@ const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Da
 const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 const monthKey = (d) => d.getFullYear() * 12 + d.getMonth();
 const fmtPrice = (n) => Number(n).toLocaleString('th-TH');
+// short form under each day: 1290 -> 1.29k, 1000 -> 1k
+const fmtShort = (n) => `${Number((n / 1000).toFixed(2))}k`;
 
 /**
  * Render the calendar into el.
@@ -52,7 +54,7 @@ export function mountDatePicker(el, { value, min, priceFor, onChange }) {
       cells += off
         ? `<span class="dp-cell dp-day off" aria-disabled="true">${d}</span>`
         : `<button type="button" class="dp-cell dp-day${cls}" data-day="${key}" aria-pressed="${key === value}"
-             aria-label="${label} ราคา ${fmtPrice(p)} บาท"><b>${d}</b><small>${p}</small></button>`;
+             aria-label="${label} ราคา ${fmtPrice(p)} บาท"><b>${d}</b><small>${fmtShort(p)}</small></button>`;
     }
     return `<div class="dp-month"><div class="dp-title">${title}</div>
       <div class="dp-grid">${DOW.map((w) => `<span class="dp-dow">${w}</span>`).join('')}${cells}</div></div>`;

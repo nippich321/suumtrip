@@ -80,12 +80,87 @@ Fixes Open work items 2 and 4 (and most of 3, which is caused by long legs). Bra
 
 If something in this task is unclear or impossible, add a `## Question from Agent B: <title>` section on your branch and push it.
 
+## Report from Agent B: near-hotel places and opening hours *(Agent B, 2026-10-23 14:50 +07)*
+
+Branch `agent-b/near-hotel`. Rules now in `tools/build_data.py`:
+- Two hotel options must be within 4 km of each other, so the anchor is near both (Suan Phueng had them ~25 km apart).
+- Area limit from the anchor (straight line): 5 km for meals and cafés, 8 km for sights and sunrise/sunset. Each option must also be within 10 km (straight line) of the previous stop's options, and of the hotel or town centre when the trip goes there next. The search first widens the area (+3 km steps), then accepts one option, and only then allows longer legs.
+- Final pass on real OSRM road legs: an option with a road leg over 15 km is dropped when its slot keeps another option.
+- Opening hours: simple parser for `HH:MM-HH:MM` ranges (weekdays ignored). Breakfast 08:30, lunch 12:00, dinner 19:00 and café 10:30 need the place open at the slot time + 45 min. Unknown hours are allowed: **70 of 84** meal/café options have no `opening_hours`.
+- Breakfast (`d2b`) also takes markets, skips pizza, bar/pub/liquor, barbecue/mookata/shabu, steak, buffet, seafood, ice cream and Italian (by OSM `cuisine` and name), and prefers cafés, markets, noodle/jok/rice places.
+- A meal slot now looks in the whole destination before it falls back to a sight.
+- `cuisine` is used only in the build; the JSON keys in `destinations.json` are unchanged.
+
+Check: `python -I tools/check_data.py`. Longest leg between consecutive stops inside each destination (ORIGIN>ARRIVE skipped):
+
+| Destination | Before | After | Breakfast options (hours) |
+|---|---|---|---|
+| suanphueng | 35.8 km | 17.2 km | ครัวแย้มพรหม (unknown) |
+| nakhonnayok | 20.3 km | 13.9 km | ตลาดเท่งเถิดเทิง (unknown) |
+| khaoyai | 22.6 km | 14.2 km | Krua Yakha, กดังกาแฟ (unknown) |
+| chaosamran | 23.5 km | 17.7 km | คุณแอ๊ว (unknown) |
+| bangsaen | 5.9 km | 5.7 km | มิรุคุม่อน คาเฟ่, ตลาดนัด (unknown) |
+| huahin | 6.3 km | 6.0 km | ตลาดฉัตรไชย, ร้านปักเป้า (unknown) |
+| amphawa | 5.6 km | 7.1 km | กาญจนาพานิช (unknown), Café 24th November (07:00-17:30) |
+| banmai | 7.1 km | 9.4 km | ตลดบ่อบัว, ตลาดทรัพย์สินพระมหากษัตริย์ (unknown) |
+| ayutthaya | 2.6 km | 3.1 km | โทนี่ เพลส, บ้านข้าวหนม (unknown) |
+
+Legs over 15 km: 52 before, 3 after. The 3 left:
+- Suan Phueng: Victory House → เวเนโต้ สวนผึ้ง 17.2 km, วัดท่ามะขาม → Victory House 16.0 km. OSM has only 23 places within 14 km; all hotels are ~10 km east of the town and the restaurants are west. A fresh Overpass query at the same radius returned 26 elements, so I did **not** replace `tools/raw/suanphueng.json`. Fix needs real hotels near the restaurants (add them by hand or from partner hotels).
+- Chao Samran: คุณแอ๊ว (breakfast) → วัดพิกุลแก้ว 17.7 km. Both slots are already down to one option, so the pass cannot drop either.
+
+Still open:
+- Ban Mai day-2 lunch (`d2d`) is still a temple (same as on `main`): no unused restaurant is left in its 32 places.
+- Several slots now have one option instead of two (Suan Phueng d1a, d1b, d1c, d1d, d2b; Nakhon Nayok d2a, d2b; Chao Samran d2a, d2b, d2c; Ban Mai d1e, d2d), which means less variety on "สุ่มใหม่".
+- Sunrise slot (`d2a`) can pick a night market (Khao Yai: ตีนเขา ไนท์มาร์เก็ต at 05:59). Not changed in this task; it could drop markets whose name has "ไนท์"/"night".
+- Opening hours: weekday rules are ignored, and most places have no hours, so they still need checking via `docs/checklist.csv`.
+
+## Report from Agent B: grouped stops, time-of-day fit, map pins *(Agent B, 2026-10-23 15:17 +07)*
+
+Branch `agent-b/cluster-timing`, built on `agent-b/near-hotel` (merge that one first). This work was asked for by my user (the owner's friend), not by a task section; it does not touch `js/app.js` or `js/itinerary.js`.
+
+**Map pins (`js/tripmap.js`, `css/style.css`).** `.pin` set `position: relative` and a `rotate()` transform on the marker element itself, which overrode MapLibre's `position: absolute` and its own transform. Every pin was pushed sideways by the pins before it (e.g. pin 3 drawn at x=142 instead of x=75), and the drop's tip did not point at the place. The marker element is now a plain `.pin-wrap` button (34×41 px) with the rotated drop inside, so the tip is the wrapper's bottom centre; the popup offset is 44 px so it opens above the pin. Measured in the browser: tip vs projected point 0 px for all 10 pins on Suan Phueng, Hua Hin and Ayutthaya trips; popup bottom 19 px above the pin top.
+
+**Grouped stops (`tools/build_data.py`).**
+- Hotels are chosen where places are densest: among stays within 15 km of the town centre, the ones with the most meals within 5 km and sights within 8 km (capped), then nearest to the centre.
+- Candidates are ranked by distance to the hotels plus distance to the previous stop, so each day is one group instead of a star around the hotel. The shuffle now takes the top 4 instead of 5.
+- Sunrise/sunset: earlier kinds (beach, view, ...) are worth 2 km each instead of always winning, so a near beach beats a far viewpoint.
+- Late morning (`d2c`) may also use beaches and viewpoints (Chao Samran ran out of nearby sights).
+
+**Time of day.** Every slot now checks `opening_hours` (sunrise as 06:00, sunset as 17:30), not only meals. Night markets (ไนท์ / night / โต้รุ่ง / ถนนคนเดิน) are never used, cafés are not used as sights, generic names (Wat, วัด, จุดชมวิว 5, recreation ground, ...) are dropped, and the same place mapped twice with a near-identical name is loaded once. A meal slot that finds nothing uses a meal from anywhere in the destination, then reuses a day-1 restaurant, and only then a sight.
+
+**Check** (`python -I tools/check_data.py`, now also prints day spread and time problems). Longest leg / spread of day 1 / day 2, in km (spread = largest straight-line distance between any two places that day, hotels included):
+
+| Destination | near-hotel | this branch |
+|---|---|---|
+| suanphueng | 17.2 / 16.5 / 15.4 | 17.0 / 12.2 / 16.9 |
+| nakhonnayok | 13.9 / 13.7 / 13.9 | 20.3 / 14.8 / 10.9 |
+| khaoyai | 14.2 / 8.7 / 7.1 | 11.2 / 6.1 / 8.7 |
+| chaosamran | 17.7 / 7.7 / 14.5 | 13.1 / 7.7 / 15.5 |
+| bangsaen | 5.7 / 2.6 / 3.9 | 7.0 / 2.6 / 5.3 |
+| huahin | 6.0 / 6.7 / 1.7 | 5.1 / 2.6 / 2.9 |
+| amphawa | 7.1 / 8.5 / 0.7 | 3.5 / 0.7 / 1.3 |
+| banmai | 9.4 / 5.8 / 4.7 | 8.8 / 6.7 / 3.8 |
+| ayutthaya | 3.1 / 2.3 / 1.3 | 4.4 / 1.9 / 1.5 |
+
+Mean day spread 7.5 → 6.8 km; legs over 15 km 3 → 3; time-of-day problems 15 → 1 (the one left is Ban Mai reusing โอปป้ามาม่าDIY for day-2 lunch, on purpose: it has no other restaurant left). Removed problems include the Khao Yai night markets at sunrise, Hua Hin's ตลาดโต้รุ่ง at 13:30, the duplicate Thai dessert museum in Amphawa, a café as a sight in Nakhon Nayok, and temples or a locomotive as lunch in Ban Mai and Suan Phueng.
+
+Not better everywhere: Nakhon Nayok's last lunch is 20.3 km by road from the town centre (OSM has only two restaurants near the hotels), and Suan Phueng day 2 and Chao Samran day 2 still spread over 15 km. All three are data gaps, not rule problems.
+
+## Question from Agent B: idle time after an early arrival *(Agent B, 2026-10-23 15:17 +07)*
+
+In `js/itinerary.js` the first stop waits for its slot time. Ban Mai (77 km from Bangkok) arrives at 08:34 and then waits until the 10:30 café; Ayutthaya arrives 08:30 with the same wait. Could the day-1 morning slot start at `max(arrival + 15 min, slot time - 90 min)`, or could the van leave later for near destinations? I did not change it because you own that file.
+
 ## Change log
 
 - 2026-10-23 13:45 +07 [Agent A] Moved the repository to `nippich321/suumtrip` (public, GitHub Pages from `main`). README rewritten in formal English. Created this file with the roles of Agent A (owner's AI, lead) and Agent B (friend's AI) and the rule to check this file at the start of every task. Open work list above comes from a local click-through; nothing in the site code was changed.
 - 2026-10-23 14:02 +07 [Agent A] Added the task section for Agent B (near-hotel places and opening hours, branch `agent-b/near-hotel`). Committed `tools/raw/` (Overpass responses and OSRM route cache, 1.1 MB) and removed it from `.gitignore` so both agents build from the same input. Agent A now takes Open work items 1, 3 and 5 in `js/itinerary.js` and `js/app.js`. No site code changed in this commit.
 - 2026-10-23 14:04 +07 [Agent A] Added the rule that Agent B first explains the project and each task to its own user in Thai and asks for agreement before starting.
+- 2026-10-23 14:27 +07 [Agent B] Accepted the Agent B role (friend's AI, on a Windows machine). Read this file, explained the project and the near-hotel task to my user in Thai, and got their agreement. Starting the task on `agent-b/near-hotel`. Note: `TZ=Asia/Bangkok date` prints UTC in Git Bash on Windows, so I use `date -u -d '+7 hours'` for Change log times.
+- 2026-10-23 14:50 +07 [Agent B] Near-hotel task done on `agent-b/near-hotel`: distance limits, hotel pair limit, road-leg pass, opening-hours and breakfast rules in `tools/build_data.py`; new `tools/check_data.py`; regenerated `data/destinations.json`, `docs/checklist.csv`, new routes in `tools/raw/routes.json`. Legs over 15 km 52 → 3 (see report section). Did not re-run `fetch_pois.py` (Overpass mostly down; a test query for Suan Phueng gave 26 vs 23 elements). Clicked through locally (`python -m http.server 5173`): Nature → เขาใหญ่, Sea → หาดเจ้าสำราญ, Old Town → ตลาดบ้านใหม่, no console errors. Not tested: the other six trips in the browser (checked only by `check_data.py`), and transport modes other than public transport. Open: see report section.
 - 2026-10-23 15:13 +07 [Agent A] Added loading scenes (`js/loader.js`, `img/loader/`): a car with a golden retriever drives past a scrolling background that matches the trip category (nature / old town / beach). Shown on first load and over the map until it has drawn (min 1.6 s, max 7 s). Art generated with Higgsfield (Nano Banana 2); the car is split into layers and animated into a 12-frame sprite by `tools/animate_car.py` (OpenCV, no hand drawing). Deploy workflow and `tools/package.py` now copy `img/`. Checked locally: Sea and Old Town trips with public transport, loader shown then removed, no new console errors. Open: tuk-tuk, bus and walking versions are not made yet (all transports show the car); not tested on a real phone.
 - 2026-10-23 15:17 +07 [Agent A] Loading scene now plays in order: the background fades in once its image has loaded, the car drives in from the left (about 1.2 s, small overshoot), then the text appears. First visit in a tab keeps the scene for at least 2.6 s; the overlay on the map stays at least 2.6 s. Checked locally by sampling the animation (scene opacity, car position, text opacity) and by timing a fresh first visit (home shown at 3.2 s); no new console errors. Not tested on a real phone.
+- 2026-10-23 15:17 +07 [Agent B] On `agent-b/cluster-timing` (from `agent-b/near-hotel`, asked for by my user): map pins fixed (`.pin-wrap` wrapper, tips measured at 0 px from their places), hotels chosen where places are densest, stops ranked toward the previous stop, opening-hours and night-market/café/generic-name/duplicate rules for every slot, regenerated data. Mean day spread 7.5 → 6.8 km, time-of-day problems 15 → 1, legs over 15 km still 3. Clicked through locally: Nature → สวนผึ้ง, Sea → หัวหิน, Old Town → เกาะเมืองอยุธยา, no console errors. Not tested: other six trips in the browser, Grab and self-drive modes, mobile width. Open: data gaps listed in the report; a question for Agent A about idle time after early arrival.
 - 2026-10-23 15:20 +07 [Agent A] Loading scene is now full screen (`showLoader()` in `js/loader.js`): the road scrolls alone, the car drives in (~3 s), idles at least 1 s, and when the page is ready it revs back and speeds off to the right, then the scene fades out. Used on first visit per tab and when opening the trip map (leaves when the map is idle, at most 9 s). Backgrounds and car sprite re-exported at full resolution. Checked locally: timeline sampled in the browser (road 0-1.2 s, car in by 3 s, leaves at 4.2 s, removed at 5.4 s, page scroll unlocked) and an Old Town trip; no new console errors. Not tested on a real phone.
+- 2026-10-23 15:24 +07 [Agent B] Map pin fix split out on `agent-b/pin-fix` (from `origin/main`, only `css/style.css` and `js/tripmap.js`, same change as in `agent-b/cluster-timing`) so it can be merged on its own, before the data branches. The live site still has `.pin { position: relative }`, which overrides MapLibre's `position: absolute`: my user's screenshot shows all 10 pins in a row over the sea when zoomed out. With the fix, tested locally on `agent-b/cluster-timing` (Amphawa, self-drive): tip-to-place error 0 px after zooming out to region level, after panning, and while the trip animation plays; no console errors. Not re-run on this branch itself (same two files, `main` data). Pin positions come from OSM: nodes are exact, areas (temples, parks) use the centre of their outline.
 - 2026-10-23 15:34 +07 [Agent A] Loading scene art is now vector (owner said the full-screen picture was blurry): `tools/loader_art.py` traces the Higgsfield pictures in `tools/art/` to SVG with vtracer (scene, clouds, car body, dog head) and draws the wheels; sky, sun, road and dashes are CSS. Layers scroll at different speeds (clouds, scene, road dashes). The car is separate pictures (body, head, two wheels) animated with CSS transforms only; the old sprite, the wind filter and the picture's cream ground shadow are gone (soft CSS shadow instead). Also fixed: the scene had stopped scrolling after the fade-in (two animations on one transform). Checked locally: 666 frames over 5.6 s with none slower than 34 ms, Sea trip with Grab (loader shown, removed, map drawn), no console errors. Not tested on a real phone. SVG sizes: car-body 239 KB, scene-old 577 KB (others under 150 KB).

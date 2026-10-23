@@ -165,7 +165,10 @@ p { margin: 0 0 .8em; }
 .verify { font-size: 12px; color: var(--muted); background: var(--sun-soft); border-radius: 10px; padding: 8px 12px; margin-top: 12px; }
 
 /* map pins */
-.pin { position: relative; width: 34px; height: 34px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); border: 2px solid #fff; background: var(--coral); color: #fff; box-shadow: 0 3px 10px rgba(0, 0, 0, .25); padding: 0; }
+/* MapLibre positions .pin-wrap (it needs position: absolute and its own transform), so the
+   rotated drop sits inside it; the drop's tip lands on the wrapper's bottom centre. */
+.pin-wrap { width: 34px; height: 41px; padding: 0; border: 0; background: none; cursor: pointer; }
+.pin { position: absolute; top: 0; left: 0; width: 34px; height: 34px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); border: 2px solid #fff; background: var(--coral); color: #fff; box-shadow: 0 3px 10px rgba(0, 0, 0, .25); }
 .pin i { display: block; transform: rotate(45deg); font-size: 17px; line-height: 30px; }
 .pin span { position: absolute; top: -8px; right: -8px; transform: rotate(45deg); background: var(--ink); color: #fff; font-size: 10px; width: 17px; height: 17px; border-radius: 50%; line-height: 17px; }
 

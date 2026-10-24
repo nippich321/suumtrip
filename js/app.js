@@ -614,9 +614,10 @@ const PKEY = 'suumtrip.rooms';
 function loadRooms() {
   try { const r = JSON.parse(localStorage.getItem(PKEY)); if (Array.isArray(r)) return r; } catch { /* ignore */ }
   return [
-    { date: '2026-11-03', room: 'Deluxe วิวสวน', public: 2200, secret: 800, status: 'sold' },
-    { date: '2026-11-04', room: 'Deluxe วิวสวน', public: 2200, secret: 800, status: 'sold' },
-    { date: '2026-11-10', room: 'Family', public: 3200, secret: 1200, status: 'wait' },
+    // the rates hotels quoted the team for low season (5 hotels asked, 2026-10-24)
+    { date: '2026-11-03', room: 'Deluxe', public: 1800, secret: 1300, status: 'sold' },
+    { date: '2026-11-04', room: 'Deluxe', public: 1800, secret: 1300, status: 'sold' },
+    { date: '2026-11-10', room: 'Premium', public: 2500, secret: 1900, status: 'wait' },
   ];
 }
 function saveRooms(r) { try { localStorage.setItem(PKEY, JSON.stringify(r)); } catch { /* ignore */ } }
@@ -628,6 +629,7 @@ function renderPartner() {
   <section class="screen">
     <h2>ปล่อยห้องว่างแบบลับ</h2>
     <p class="muted">ห้องที่ยังว่าง ขายให้ลูกค้ากล่องสุ่มในราคาลับ ราคาหน้าเว็บของคุณไม่เปลี่ยน ไม่มีค่าสมัคร จ่ายเฉพาะเมื่อขายได้</p>
+    <p class="fine">ราคาตัวอย่างจากการสอบถามโรงแรม 5 แห่ง ช่วง low season: ห้อง 1,800 ลดเหลือ 1,300 · ห้อง 2,500 ลดเหลือ 1,900</p>
     <div class="row2" style="margin-bottom:16px">
       <div class="stat"><b>${sold.length}</b><span>คืนที่ขายได้เดือนนี้</span></div>
       <div class="stat"><b>${fmt(sold.reduce((s, r) => s + r.secret, 0))}฿</b><span>รายได้จากห้องที่จะว่าง</span></div>
@@ -637,8 +639,8 @@ function renderPartner() {
       <label class="field"><span>วันที่ว่าง</span><input type="date" name="date" required></label>
       <label class="field"><span>ประเภทห้อง</span><input name="room" placeholder="Deluxe วิวภูเขา" required></label>
       <div class="row2">
-        <label class="field"><span>ราคาหน้าเว็บ (บาท)</span><input type="number" name="public" min="0" placeholder="2200" required></label>
-        <label class="field"><span>ราคาลับขั้นต่ำ (บาท)</span><input type="number" name="secret" min="0" placeholder="800" required></label>
+        <label class="field"><span>ราคาหน้าเว็บ (บาท)</span><input type="number" name="public" min="0" placeholder="1800" required></label>
+        <label class="field"><span>ราคาลับขั้นต่ำ (บาท)</span><input type="number" name="secret" min="0" placeholder="1300" required></label>
       </div>
       <div class="err" id="formerr" role="alert"></div>
       <button class="btn btn-primary btn-block">ปล่อยห้องนี้</button>

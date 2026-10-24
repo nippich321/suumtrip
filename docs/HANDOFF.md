@@ -1,6 +1,6 @@
 # Handoff — Suumtrip (read this first if you pick up the work)
 
-Last updated: 2026-10-24 16:30 +07 by Agent A. Keep this file current: update it with every push.
+Last updated: 2026-10-24 16:50 +07 by Agent A. Keep this file current: update it with every push.
 
 ## Where things stand
 
@@ -59,6 +59,12 @@ Last updated: 2026-10-24 16:30 +07 by Agent A. Keep this file current: update it
   どこかにマイル, JR East どこかにビューーン!).
 - Van/bus times (Bang Saen, Amphawa, Nakhon Nayok, Suan Phueng) need a person's tick in
   `docs/schedules.csv` (AI ticks do not count), then `python -I tools/build_schedules.py`.
+- Pricing (owner's real data, 2026-10-24): 5 hotels asked; low season they cut 1,800 → 1,300 and
+  2,500 → 1,900 (about 25 %). Plan agreed ("ค"): regular boxes use hotels whose net is about 850
+  (list price about 1,100-1,200); gold destinations (net about 1,900) come out 10 % of the time, so the
+  average room cost is about 0.9 x 850 + 0.1 x 1,900 = 955 and a 1,290 box keeps about 335 (26 %)
+  for marketing, operations and profit. Weekend hotel rates are not known yet. The partner page shows
+  the real quotes.
 - Prices: the box price is for 2; other party sizes say the team will quote. Hotel "secret
   rates" and rack prices are illustrative: say so in the video.
 - Not tested on a real phone. Old console errors in a long-lived test tab are from before

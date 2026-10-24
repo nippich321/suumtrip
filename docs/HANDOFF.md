@@ -1,6 +1,6 @@
 # Handoff — Suumtrip (read this first if you pick up the work)
 
-Last updated: 2026-10-24 16:15 +07 by Agent A. Keep this file current: update it with every push.
+Last updated: 2026-10-24 16:30 +07 by Agent A. Keep this file current: update it with every push.
 
 ## Where things stand
 
@@ -46,6 +46,13 @@ Last updated: 2026-10-24 16:15 +07 by Agent A. Keep this file current: update it
 7. 15 destinations (`tools/build_data.py` → `data/destinations.json`): 11 by train, 4 by van.
 
 ## Open items
+
+- Logo: `img/logo/logo-512.png` + `favicon-64.png`, rendered from the 3D gift box by
+  `tools/render_logo.py` (Blender). The owner asked for a Higgsfield logo: the Higgsfield MCP here has
+  no generate tool, the in-app browser is not logged in (the owner must log in themselves; never type
+  passwords) and the account has 2 credits (one Nano Banana 2 image). Planned prompt: flat icon of a
+  coral gift box (#FF6B4A) with a gold bow (#FFB020), lid slightly open with a map pin popping out,
+  white background, no text.
 
 - Video script and recording (2 minutes; answer "how do you beat OTAs?": we sell the whole
   trip and the decision, not a cheaper room; mystery-trip precedents: Waynabox, JAL

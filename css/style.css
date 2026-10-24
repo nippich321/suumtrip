@@ -564,3 +564,4 @@ html.ld-lock, html.ld-lock body { overflow: hidden; }
 .who2 .ppl-step output { font-family: var(--font); font-weight: 600; display: inline-block; }
 .who2 .ppl-step output.bump { animation: bump .25s ease-out; }
 @keyframes bump { 40% { transform: scale(1.35); color: var(--coral); } }
+.brand-logo { width: 36px; height: 36px; display: block; }

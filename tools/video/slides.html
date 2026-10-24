@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Suumtrip video slides</title>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Mitr:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  /* the video's own slides (tools/video/shoot.py opens one per scene: #chat, #money, #ota, #end) */
+  :root { --bg: #fff7f0; --ink: #221c33; --muted: #6e6680; --coral: #ff6b4a; --coral-dark: #d94a2b; --sun: #ffb020; --teal: #10a39a; --line: #efe3d8; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: 'Anuphan', sans-serif; }
+  section { display: none; width: 100%; height: 100%; }
+  section.on { display: flex; }
+  h1, h2, .big { font-family: 'Mitr', sans-serif; font-weight: 500; margin: 0; }
+  .in { opacity: 0; transform: translateY(24px); animation: in .6s ease-out forwards; }
+  @keyframes in { to { opacity: 1; transform: none; } }
+
+  /* chat */
+  #chat { align-items: center; justify-content: center; gap: 120px; }
+  .phone { width: 520px; height: 900px; background: #fff; border-radius: 48px; box-shadow: 0 30px 80px rgba(60, 30, 20, .18); padding: 28px 22px; display: flex; flex-direction: column; border: 10px solid #221c33; }
+  .phone-h { text-align: center; font-weight: 600; font-size: 26px; padding: 6px 0 18px; border-bottom: 1px solid #eee; }
+  .msgs { flex: 1; display: flex; flex-direction: column; gap: 14px; padding-top: 18px; }
+  .m { max-width: 78%; font-size: 26px; padding: 12px 18px; border-radius: 22px; background: #f0f0f2; align-self: flex-start; }
+  .m small { display: block; font-size: 16px; color: var(--muted); }
+  .m.me { align-self: flex-end; background: var(--coral); color: #fff; }
+  .m.me small { color: #ffe1d9; }
+  .q { font-size: 72px; max-width: 760px; line-height: 1.35; }
+  .q span { color: var(--coral); }
+
+  /* money */
+  #money, #ota, #end { flex-direction: column; align-items: center; justify-content: center; gap: 36px; }
+  .tag { font-size: 26px; color: var(--teal); font-weight: 600; letter-spacing: .02em; }
+  .row { display: flex; gap: 36px; align-items: stretch; }
+  .card { background: #fff; border: 2px solid var(--line); border-radius: 28px; padding: 36px 44px; min-width: 380px; text-align: center; }
+  .card .k { font-size: 30px; color: var(--muted); }
+  .card .v { font-family: 'Mitr'; font-size: 92px; line-height: 1.15; }
+  .card .s { font-size: 24px; color: var(--muted); }
+  .card.hi { border-color: var(--coral); }
+  .card.hi .v { color: var(--coral); }
+  .op { font-family: 'Mitr'; font-size: 90px; align-self: center; color: var(--muted); }
+  .src { font-size: 28px; color: var(--muted); }
+  .src b { color: var(--ink); }
+  .ex { display: inline-block; background: #fff1d1; color: #8a5a00; border-radius: 999px; padding: 6px 22px; font-size: 26px; font-weight: 600; }
+
+  /* ota */
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 1500px; }
+  .col { background: #fff; border-radius: 32px; padding: 44px 52px; border: 2px solid var(--line); }
+  .col.us { border: 4px solid var(--coral); }
+  .col h2 { font-size: 54px; margin-bottom: 18px; }
+  .col.us h2 { color: var(--coral); }
+  .col li { font-size: 34px; margin: 14px 0; list-style: none; }
+  .col li::before { content: '–  '; color: var(--muted); }
+  .col.us li::before { content: '✓  '; color: var(--teal); }
+  .refs { font-size: 32px; color: var(--muted); }
+
+  /* end */
+  #end img { width: 300px; height: 300px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 50% { transform: translateY(-14px) rotate(-3deg); } }
+  #end h1 { font-size: 130px; }
+  #end .slogan { font-family: 'Mitr'; font-size: 60px; color: var(--coral); }
+  #end .url { font-size: 36px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <section id="chat">
+    <div class="phone">
+      <div class="phone-h">ทริปเพื่อนรัก (4)</div>
+      <div class="msgs" id="msgs"></div>
+    </div>
+    <div class="q in" style="animation-delay:9s">ทุกคนเคยเป็นแบบนี้ไหม<br><span>อยากเที่ยว แต่ไม่อยากวางแผน</span></div>
+  </section>
+
+  <section id="money">
+    <div class="tag in">โมเดลรายได้ · ต่อ 1 กล่อง (2 คน)</div>
+    <div class="row">
+      <div class="card in" style="animation-delay:.4s"><div class="k">ลูกค้าจ่าย</div><div class="v">1,290</div><div class="s">บาท · จ–พฤ</div></div>
+      <div class="op in" style="animation-delay:.9s">−</div>
+      <div class="card in" style="animation-delay:1.3s"><div class="k">ค่าห้องเฉลี่ย</div><div class="v">955</div><div class="s">ห้องปกติ 850 · ทองคำ 1,900 (10%)</div></div>
+      <div class="op in" style="animation-delay:1.8s">=</div>
+      <div class="card hi in" style="animation-delay:2.2s"><div class="k">เหลือให้เรา</div><div class="v">335</div><div class="s">ราว 26% · การตลาด ดำเนินงาน กำไร</div></div>
+    </div>
+    <div class="src in" style="animation-delay:3.2s">ข้อมูลจริงจากการสอบถามโรงแรม 5 แห่ง ช่วง low season: <b>1,800 → 1,300</b> · <b>2,500 → 1,900</b> บาท</div>
+    <div class="ex in" style="animation-delay:3.8s">ตัวเลขค่าห้องเฉลี่ยและส่วนที่เหลือเป็นตัวอย่างจากแผนราคา</div>
+  </section>
+
+  <section id="ota">
+    <div class="vs">
+      <div class="col in"><h2>แอปจองโรงแรม (OTA)</h2><ul style="padding:0;margin:0">
+        <li>ขายห้องพัก</li><li>ลูกค้าต้องเลือกเองทุกอย่าง</li><li>แข่งกันที่ราคาห้อง</li></ul></div>
+      <div class="col us in" style="animation-delay:.7s"><h2>สุ่มทริป</h2><ul style="padding:0;margin:0">
+        <li>ขายทั้งทริป 2 วัน 1 คืน</li><li>ตัดสินใจแทน ไม่ต้องเถียงกัน</li><li>รถไฟจริง แผนรายชั่วโมง</li><li>พาไปเมืองรอง ร้านท้องถิ่น</li></ul></div>
+    </div>
+    <div class="refs in" style="animation-delay:1.6s">โมเดลเดียวกับ JAL「どこかにマイル」· JR East「どこかにビューーン!」· Waynabox (สเปน)</div>
+  </section>
+
+  <section id="end">
+    <img src="../../img/logo/logo-512.png" alt="">
+    <h1 class="in">สุ่มทริป</h1>
+    <div class="slogan in" style="animation-delay:.5s">ไม่ต้องคิด แค่ไป</div>
+    <div class="url in" style="animation-delay:1s">nippich321.github.io/suumtrip</div>
+  </section>
+
+<script>
+  const id = location.hash.slice(1) || 'chat';
+  document.getElementById(id).classList.add('on');
+  if (id === 'chat') {
+    // a made-up group chat (generic names) for the opening scene
+    const lines = [
+      ['บอส', 'เสาร์นี้ไปเที่ยวกันมั้ย'], ['แพร', 'ไปไหนดีอะ'], ['me', 'ทะเลมั้ย'],
+      ['บอส', 'ไม่เอา ร้อน ภูเขาดีกว่า'], ['แพร', 'แล้วที่พักใครหา'], ['บอส', 'ขี้เกียจหาอะ 555'],
+      ['me', 'งั้น...ไว้คราวหน้าละกัน'],
+    ];
+    const box = document.getElementById('msgs');
+    lines.forEach(([who, text], i) => setTimeout(() => {
+      const m = document.createElement('div');
+      m.className = `m in ${who === 'me' ? 'me' : ''}`;
+      m.innerHTML = who === 'me' ? text : `<small>${who}</small>${text}`;
+      box.appendChild(m);
+    }, 600 + i * 1150));
+  }
+</script>
+</body>
+</html>

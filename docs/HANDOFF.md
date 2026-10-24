@@ -1,6 +1,6 @@
 # Handoff — Suumtrip (read this first if you pick up the work)
 
-Last updated: 2026-10-24 16:50 +07 by Agent A. Keep this file current: update it with every push.
+Last updated: 2026-10-24 18:40 +07 by Agent A. Keep this file current: update it with every push.
 
 ## Where things stand
 
@@ -54,7 +54,9 @@ Last updated: 2026-10-24 16:50 +07 by Agent A. Keep this file current: update it
   coral gift box (#FF6B4A) with a gold bow (#FFB020), lid slightly open with a map pin popping out,
   white background, no text.
 
-- Video: draft script in `docs/VIDEO_SCRIPT.md`; recording not done (2 minutes; answer "how do you beat OTAs?": we sell the whole
+- Video: script `docs/VIDEO_SCRIPT.md`; silent 2-minute cut made with HyperFrames (tools in
+  `tools/video/`, see its README; output `video/suumtrip-demo-silent.mp4`, not in git). The owner records
+  the voice-over; the cut follows the script's timing. Recording (2 minutes; answer "how do you beat OTAs?": we sell the whole
   trip and the decision, not a cheaper room; mystery-trip precedents: Waynabox, JAL
   どこかにマイル, JR East どこかにビューーン!).
 - Van/bus times (Bang Saen, Amphawa, Nakhon Nayok, Suan Phueng) need a person's tick in

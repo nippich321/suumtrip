@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="th" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600&family=Mitr:wght@500&display=swap" rel="stylesheet" />
+    <style>
+      /* Suumtrip demo, 2 minutes, silent (the owner records the voice-over). Palette = the site's. */
+      :root { --ground: #fff7f0; --ink: #221c33; --coral: #ff6b4a; --sun: #ffb020; --font-display: 'Mitr', sans-serif; --font-body: 'Anuphan', sans-serif; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--ground); }
+      #root { position: relative; width: 100%; height: 100%; }
+      .clip { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+      video.clip { object-fit: cover; }
+      /* lower-third caption */
+      .cap { position: absolute; left: 72px; bottom: 92px; width: auto; height: auto; inset: auto auto 92px 72px; z-index: 10;
+        display: flex; align-items: center; gap: 18px; padding: 18px 30px 18px 22px; border-radius: 22px;
+        background: rgba(34, 28, 51, .88); color: #fff; font-family: var(--font-body); font-size: 38px; font-weight: 600;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, .25); }
+      .cap .dot { width: 18px; height: 18px; border-radius: 50%; background: var(--coral); flex: none; }
+      .cap small { display: block; font-size: 26px; font-weight: 500; color: #ffd9cf; }
+      /* thin progress line along the bottom */
+      #bar { position: absolute; left: 0; bottom: 0; height: 8px; width: 1920px; background: var(--coral); transform-origin: 0 50%; z-index: 20; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="119.6" data-width="1920" data-height="1080">
+      <!-- footage: recorded from the live site by tools/video/shoot.py -->
+      <video id="v-chat" class="clip" src="assets/chat.mp4" muted data-start="0" data-duration="11.4" data-media-start="0.8" data-track-index="0"></video>
+      <video id="v-home" class="clip" src="assets/home.mp4" muted data-start="11" data-duration="7.4" data-media-start="2" data-track-index="1"></video>
+      <video id="v-booking" class="clip" src="assets/booking.mp4" muted data-start="18" data-duration="26.4" data-media-start="1" data-track-index="0"></video>
+      <video id="v-trip" class="clip" src="assets/trip.mp4" muted data-start="44" data-duration="13.4" data-media-start="2.5" data-track-index="1"></video>
+      <video id="v-train" class="clip" src="assets/train.mp4" muted data-start="57" data-duration="10.9" data-media-start="0.5" data-track-index="0"></video>
+      <video id="v-money" class="clip" src="assets/money.mp4" muted data-start="67.5" data-duration="18.4" data-media-start="0.6" data-track-index="1"></video>
+      <video id="v-gift" class="clip" src="assets/gift.mp4" muted data-start="85.5" data-duration="13.4" data-media-start="0.2" data-track-index="0"></video>
+      <video id="v-ota" class="clip" src="assets/ota.mp4" muted data-start="98.5" data-duration="12.9" data-media-start="0" data-track-index="1"></video>
+      <video id="v-end" class="clip" src="assets/end.mp4" muted data-start="111" data-duration="8.6" data-media-start="0" data-track-index="0"></video>
+
+      <!-- captions -->
+      <div id="c-home" class="cap" data-start="11.6" data-duration="6.2" data-track-index="2"><span class="dot"></span><div>สุ่มทริป<small>กล่องสุ่มทริป 2 วัน 1 คืน</small></div></div>
+      <div id="c-booking" class="cap" data-start="18.8" data-duration="24.6" data-track-index="2"><span class="dot"></span><div>เลือกแค่แนว วัน และการเดินทาง<small>ปลายทางเป็นความลับจนเปิดกล่อง</small></div></div>
+      <div id="c-trip" class="cap" data-start="44.8" data-duration="5" data-track-index="2"><span class="dot"></span><div>จ่ายแล้วเปิดกล่องลุ้น</div></div>
+      <div id="c-plan" class="cap" data-start="50.5" data-duration="6" data-track-index="2"><span class="dot"></span><div>ได้แผนครบทุกชั่วโมง<small>ร้านและที่เที่ยวอยู่ใกล้กัน</small></div></div>
+      <div id="c-train" class="cap" data-start="57.8" data-duration="9" data-track-index="2"><span class="dot"></span><div>รถไฟจริงตามตารางการรถไฟฯ<small>ลงสถานีแล้วไปฝากกระเป๋าที่พักก่อน</small></div></div>
+      <div id="c-gift" class="cap" data-start="86.2" data-duration="12" data-track-index="2"><span class="dot"></span><div>บัตรของขวัญองค์กร · ห้องว่างจากโรงแรม<small>รายได้อีกสองทาง</small></div></div>
+
+      <div id="bar" data-start="0" data-duration="119.6" data-track-index="3"></div>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      // cross-fade each clip in over the one before (they overlap by 0.4 s)
+      [['#v-home', 11], ['#v-booking', 18], ['#v-trip', 44], ['#v-train', 57], ['#v-money', 67.5],
+       ['#v-gift', 85.5], ['#v-ota', 98.5], ['#v-end', 111]].forEach(([id, at]) => {
+        tl.fromTo(id, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'none' }, at);
+      });
+      tl.fromTo('#v-chat', { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'none' }, 0);
+      // captions slide up in and fade out
+      [['#c-home', 11.6, 6.2], ['#c-booking', 18.8, 24.6], ['#c-trip', 44.8, 5], ['#c-plan', 50.5, 6],
+       ['#c-train', 57.8, 9], ['#c-gift', 86.2, 12]].forEach(([id, at, d]) => {
+        tl.fromTo(id, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out' }, at);
+        tl.to(id, { opacity: 0, y: 12, duration: 0.3, ease: 'power2.in' }, at + d - 0.3);
+      });
+      tl.fromTo("#bar", { scaleX: 0 }, { scaleX: 1, duration: 119.6, ease: "none" }, 0);
+      tl.to('#v-end', { opacity: 0, duration: 0.8, ease: 'none' }, 118.8);
+      window.__timelines['main'] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

@@ -361,7 +361,12 @@ const screens = {
     const btn = app.querySelector('#playbtn');
     btn.onclick = () => {
       if (tripMap.isPlaying()) { tripMap.pause(); setPlayIcon(false); }
-      else { const c = tripMap.current(); tripMap.play(c >= 0 && c < t.items.length - 1 ? c : 0); setPlayIcon(true); }
+      else {
+        // on a phone the map may be scrolled away: show it once, then leave the page alone
+        const m = app.querySelector('.mapwrap').getBoundingClientRect();
+        if (m.top < 0 || m.bottom > innerHeight) app.querySelector('.mapwrap').scrollIntoView({ block: 'start', behavior: 'smooth' });
+        const c = tripMap.current(); tripMap.play(c >= 0 && c < t.items.length - 1 ? c : 0); setPlayIcon(true);
+      }
     };
     bindTimeline();
     planner?.destroy();
@@ -439,6 +444,17 @@ function finishWhenMapReady(loader, map) {
   setTimeout(go, 9000);
 }
 
+// While the trip plays, keep its row in view, but only inside the side timeline (desktop),
+// which scrolls on its own; on a phone the timeline is under the map, and scrolling the page
+// there would pull the map out of sight.
+function followRow(row) {
+  const tl = row.closest('.timeline');
+  if (!tl || getComputedStyle(tl).overflowY === 'visible' || tl.scrollHeight <= tl.clientHeight + 1) return;
+  const r = row.getBoundingClientRect();
+  const b = tl.getBoundingClientRect();
+  if (r.top < b.top + 60 || r.bottom > b.bottom - 20) tl.scrollTo({ top: tl.scrollTop + r.top - b.top - b.height / 3, behavior: 'smooth' });
+}
+
 function setPlayIcon(on) {
   const b = document.getElementById('playbtn');
   if (b) b.innerHTML = `<i class="ti ${on ? 'ti-player-pause' : 'ti-player-play'}"></i>`;
@@ -449,7 +465,7 @@ function highlight(i, playing) {
   const t = S.trip;
   document.querySelectorAll('.stop').forEach((r) => r.classList.toggle('active', Number(r.dataset.i) === i));
   const row = document.querySelector(`.stop[data-i="${i}"]`);
-  if (row && playing) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  if (row && playing) followRow(row);
   const it = t.items[i];
   const hud = document.getElementById('hud');
   if (!hud || !it) return;

@@ -1,6 +1,6 @@
 # Handoff — Suumtrip (read this first if you pick up the work)
 
-Last updated: 2026-10-24 15:40 +07 by Agent A. Keep this file current: update it with every push.
+Last updated: 2026-10-24 16:00 +07 by Agent A. Keep this file current: update it with every push.
 
 ## Where things stand
 
@@ -22,10 +22,12 @@ Last updated: 2026-10-24 15:40 +07 by Agent A. Keep this file current: update it
 2. Booking pages (`js/app.js`, `wizard()` + `screens.cat/date/choose/who/cands/pay`): stepper,
    steps on the left, a sticky booking summary with price and the next button on the right
    (a fixed bottom bar on phones). Order: แนวทริป → วันเดินทาง → การเดินทาง → ผู้เดินทาง →
-   ปลายทาง → ชำระเงิน. **In progress:** restyle to a calm, professional look modelled on
-   Booking.com's guest-details page (white cards, 1px grey borders, 8px radius, 14px text,
-   labels above inputs, radio-list choices, no cartoon art) plus selection animations; the
-   markup changes are in `js/app.js` (`.ropt`, `.fld`, `body.booking`), the CSS is next.
+   ปลายทาง → ชำระเงิน. The owner **likes the picture cards** (category cards use the loader scene
+   art) and the current colours: do not restyle all pages again. Only the travellers page was
+   redone like Booking.com's guest details (labels above the boxes, square +/- buttons).
+   Selection animations: the picked card rings out and its check pops; changed summary rows
+   flash; the people counter bumps. A calmer all-pages restyle the owner rejected is kept in
+   `git stash` ("calm-restyle-all-pages"); do not apply it.
 3. Box opening (`#open`), then the trip page (`#trip`): MapLibre map with the 3D traveler
    (`js/traveler3d.js`: cars, van, coach, train with carriages; walkers), timeline, playback
    (on phones playback does not scroll the page).
@@ -43,7 +45,6 @@ Last updated: 2026-10-24 15:40 +07 by Agent A. Keep this file current: update it
 
 ## Open items
 
-- Finish the booking-page restyle and selection animations, test at 1000 px and 375 px, push.
 - Video script and recording (2 minutes; answer "how do you beat OTAs?": we sell the whole
   trip and the decision, not a cheaper room; mystery-trip precedents: Waynabox, JAL
   どこかにマイル, JR East どこかにビューーン!).

@@ -125,7 +125,10 @@ function wizard(id, { title, sub, body }, still = false) {
 function refreshSide(id) {
   const n = stepOf(id);
   app.querySelector('#bknav').innerHTML = stepperHtml(n);
+  // flash the summary rows whose value just changed
+  const before = [...app.querySelectorAll('#bksum .bk-row dd')].map((d) => d.textContent);
   app.querySelector('#bksum').innerHTML = summaryHtml(n);
+  app.querySelectorAll('#bksum .bk-row').forEach((row, i) => { if (row.querySelector('dd').textContent !== before[i]) row.classList.add('chg'); });
   app.querySelector('#bkbar').innerHTML = barHtml(n);
 }
 
@@ -256,12 +259,11 @@ const screens = {
           <output id="n-${key}" aria-live="polite">${W[key]}</output>
           <button type="button" data-step="${key}:1" aria-label="เพิ่ม${label}" ${W[key] >= 10 ? 'disabled' : ''}><i class="ti ti-plus"></i></button>
         </span></div>`;
-    // the label sits in the box and moves up once something is typed
-    const field = (key, label, type, auto, icon) => `
-      <label class="in"><i class="ti ${icon}"></i>
-        <input name="${key}" type="${type}" autocomplete="${auto}" placeholder=" " value="${esc(W[key])}" aria-required="true" ${type === 'tel' ? 'inputmode="tel"' : ''}>
-        <span>${label} *</span></label>
-      <small class="hint" id="h-${key}" hidden></small>`;
+    // labels above the boxes, as on booking sites
+    const field = (key, label, type, auto) => `
+      <label class="fld"><span>${label} <b class="req">*</b></span>
+        <input name="${key}" type="${type}" autocomplete="${auto}" value="${esc(W[key])}" aria-required="true" ${type === 'tel' ? 'inputmode="tel"' : ''}>
+        <small class="hint" id="h-${key}" hidden></small></label>`;
     app.innerHTML = wizard('who', {
       title: 'ผู้เดินทาง',
       body: `
@@ -271,15 +273,18 @@ const screens = {
         </div>
         <div class="bk-card who2">
           <div class="who2-h"><b>ผู้ติดต่อ</b><span class="tag-dev">ช่วงทดสอบ ข้ามได้</span></div>
-          ${field('name', 'ชื่อ-นามสกุล', 'text', 'name', 'ti-user')}
-          ${field('phone', 'เบอร์โทร', 'tel', 'tel', 'ti-phone')}
-          ${field('email', 'อีเมล', 'email', 'email', 'ti-mail')}
+          ${field('name', 'ชื่อ-นามสกุล', 'text', 'name')}
+          <div class="row2">${field('phone', 'เบอร์โทร', 'tel', 'tel')}${field('email', 'อีเมล', 'email', 'email')}</div>
         </div>`,
     });
     app.querySelectorAll('[data-step]').forEach((b) => (b.onclick = () => {
       const [key, d] = b.dataset.step.split(':');
       W[key] = Math.min(10, Math.max(key === 'adults' ? 1 : 0, W[key] + Number(d)));
-      app.querySelector(`#n-${key}`).textContent = W[key];
+      const out = app.querySelector(`#n-${key}`);
+      out.textContent = W[key];
+      out.classList.remove('bump');
+      void out.offsetWidth; // restart the little bump
+      out.classList.add('bump');
       app.querySelector(`[data-step="${key}:-1"]`).disabled = W[key] <= (key === 'adults' ? 1 : 0);
       app.querySelector(`[data-step="${key}:1"]`).disabled = W[key] >= 10;
       refreshSide('who');
@@ -290,7 +295,7 @@ const screens = {
       phone: (v) => (/^0\d{8,9}$/.test(v.replace(/[\s-]/g, '')) ? '' : 'เบอร์ 9–10 หลัก ขึ้นต้นด้วย 0'),
       email: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'อีเมลไม่ถูกต้อง'),
     };
-    app.querySelectorAll('.in input').forEach((inp) => {
+    app.querySelectorAll('.fld input').forEach((inp) => {
       const hint = app.querySelector(`#h-${inp.name}`);
       const test = () => { const msg = inp.value ? RULES[inp.name](inp.value) : ''; hint.textContent = msg; hint.hidden = !msg; inp.setAttribute('aria-invalid', !!msg); };
       inp.oninput = () => { W[inp.name] = inp.value; if (!hint.hidden) test(); };

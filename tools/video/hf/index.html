@@ -4,9 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=1920, height=1080" />
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=Mitr:wght@500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
     <style>
+      @font-face { font-family: 'Mitr'; font-weight: 500; src: url('assets/fonts/mitr-thai-500-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+      @font-face { font-family: 'Mitr'; font-weight: 500; src: url('assets/fonts/mitr-latin-500-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+      @font-face { font-family: 'Mitr'; font-weight: 600; src: url('assets/fonts/mitr-thai-600-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+      @font-face { font-family: 'Mitr'; font-weight: 600; src: url('assets/fonts/mitr-latin-600-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+      @font-face { font-family: 'Anuphan'; font-weight: 500; src: url('assets/fonts/anuphan-thai-500-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+      @font-face { font-family: 'Anuphan'; font-weight: 500; src: url('assets/fonts/anuphan-latin-500-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+      @font-face { font-family: 'Anuphan'; font-weight: 600; src: url('assets/fonts/anuphan-thai-600-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+      @font-face { font-family: 'Anuphan'; font-weight: 600; src: url('assets/fonts/anuphan-latin-600-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+      @font-face { font-family: 'Anuphan'; font-weight: 700; src: url('assets/fonts/anuphan-thai-700-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+      @font-face { font-family: 'Anuphan'; font-weight: 700; src: url('assets/fonts/anuphan-latin-700-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
       /* Suumtrip demo, 2:00, motion version. Fast cuts, colour-stripe wipes between scenes. Silent: voice-over later. */
       :root { --cream: #fff7f0; --ink: #221c33; --coral: #ff6b4a; --coral-d: #d94a2b; --sun: #ffb020; --teal: #10a39a; --muted: #6e6680;
         --font-display: 'Mitr', sans-serif; --font-body: 'Anuphan', sans-serif; }
@@ -26,13 +35,6 @@
       .wipe { position: absolute; top: -10%; height: 120%; width: 2600px; left: 0; z-index: 50; transform: skewX(-18deg); }
       .w1 { background: var(--coral); } .w2 { background: var(--sun); } .w3 { background: var(--ink); }
 
-      /* browser window around the site footage */
-      .win { position: absolute; width: 1440px; height: 856px; border-radius: 22px; overflow: hidden; background: #fff;
-        box-shadow: 0 40px 120px rgba(34, 28, 51, .35), 0 0 0 1px rgba(34, 28, 51, .08); }
-      .win-bar { height: 46px; background: #f3eee9; display: flex; align-items: center; gap: 10px; padding: 0 18px; }
-      .win-bar i { width: 13px; height: 13px; border-radius: 50%; display: block; }
-      .win-bar .url { margin-left: 18px; flex: 1; height: 28px; border-radius: 8px; background: #fff; font-size: 17px; color: var(--muted); display: flex; align-items: center; padding: 0 14px; }
-      .win video { position: absolute; top: 46px; left: 0; width: 1440px; height: 810px; object-fit: cover; }
 
       /* hook */
       #hook .w { font-size: 170px; }
@@ -51,15 +53,10 @@
       .ttl { font-size: 190px; color: var(--ink); }
       .ttl span { display: inline-block; }
       .sub { font-family: var(--font-display); font-size: 64px; color: var(--coral); }
-      /* booking labels */
-      .step { position: absolute; left: 1330px; top: 520px; width: 540px; background: #fff; border-radius: 34px; padding: 30px 44px 40px;
-        box-shadow: 0 30px 80px rgba(34, 28, 51, .25); display: flex; gap: 30px; align-items: center; }
-      .step .n { font-family: var(--font-display); font-size: 170px; line-height: 1; color: var(--coral); }
-      .step .t { font-family: var(--font-display); font-weight: 600; font-size: 48px; line-height: 1.2; }
       .chip { display: inline-flex; align-items: center; gap: 12px; background: #fff; border-radius: 999px; padding: 14px 28px; font-size: 34px; font-weight: 700; box-shadow: 0 12px 30px rgba(34, 28, 51, .18); }
       .chip i { color: var(--coral); font-size: 40px; }
       .big { font-size: 120px; }
-      .confetti i { position: absolute; width: 18px; height: 30px; border-radius: 4px; }
+      .confetti { z-index: 5; } .confetti i { position: absolute; width: 18px; height: 30px; border-radius: 4px; }
       /* map overlay */
       .shade { background: linear-gradient(90deg, rgba(34, 28, 51, .82) 0, rgba(34, 28, 51, .55) 34%, rgba(34, 28, 51, 0) 60%); }
       .kt { position: absolute; left: 110px; color: #fff; }
@@ -113,53 +110,24 @@
       </section>
 
       <!-- 3 logo -->
-      <section id="brand" class="clip scene grad center" data-start="12.4" data-duration="6" data-track-index="0">
+      <section id="brand" class="clip scene grad center" data-start="12.4" data-duration="3.05" data-track-index="0">
         <div class="rays abs" id="rays1" style="left:210px;top:-210px"></div>
         <img class="logo" id="logo1" src="assets/logo-512.png" alt="" />
         <div class="disp ttl" id="ttl1"><span>สุ่</span><span>ม</span><span>ท</span><span>ริ</span><span>ป</span></div>
         <div class="sub" id="sub1">เลือกแค่แนว ที่เหลือกล่องจัดให้</div>
       </section>
 
-      <!-- 4 booking montage -->
-      <section id="book" class="clip scene grad" data-start="18.4" data-duration="24" data-track-index="1">
-        
-      </section>
+      <!-- 4 booking, rebuilt from the site's steps (compositions/booking.html) -->
+      <div id="booking" data-composition-id="booking" data-composition-src="compositions/booking.html" data-start="15.4" data-duration="24.6" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
 
-      <div class="win" id="win1" style="left:70px;top:112px">
-          <div class="win-bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><div class="url">nippich321.github.io/suumtrip</div></div>
-          <video id="b1" muted src="assets/booking.mp4" data-start="18.4" data-duration="4.6" data-media-start="2"></video>
-          <video id="b2" muted src="assets/booking.mp4" data-start="23" data-duration="4" data-media-start="6.6"></video>
-          <video id="b3" muted src="assets/booking.mp4" data-start="27" data-duration="4" data-media-start="9.8"></video>
-          <video id="b4" muted src="assets/booking.mp4" data-start="31" data-duration="4" data-media-start="14.2"></video>
-          <video id="b5" muted src="assets/booking.mp4" data-start="35" data-duration="4" data-media-start="19.8"></video>
-          <video id="b6" muted src="assets/booking.mp4" data-start="39" data-duration="3.4" data-media-start="23.6"></video>
-        </div>
-
-      <div class="step" id="s1"><div class="n">1</div><div class="t">เลือกแนว<br>ทะเล เมืองเก่า ธรรมชาติ</div></div>
-      <div class="step" id="s2"><div class="n">2</div><div class="t">เลือกวัน<br>2 วัน 1 คืน</div></div>
-      <div class="step" id="s3"><div class="n">3</div><div class="t">นั่งรถไฟ<br>หรือขับรถเอง</div></div>
-      <div class="step" id="s4"><div class="n">4</div><div class="t">ไปกี่คน<br>กรอกผู้ติดต่อ</div></div>
-      <div class="step" id="s5"><div class="n">5</div><div class="t">ลุ้นปลายทาง<br>ตัดที่ไม่ชอบได้</div></div>
-      <div class="step" id="s6"><div class="n">6</div><div class="t">จ่ายพร้อมเพย์<br>จบในไม่กี่คลิก</div></div>
-
-      <!-- 5 open the box -->
-      <section id="open" class="clip scene grad" data-start="42.4" data-duration="11.5" data-track-index="0">
-        
-        
-        
-        
-      </section>
-
-      <div class="win" id="win2" style="left:240px;top:112px">
-          <div class="win-bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><div class="url">nippich321.github.io/suumtrip/#open</div></div>
-          <video id="o1" muted src="assets/trip.mp4" data-start="42.4" data-duration="6.4" data-media-start="1"></video>
-        </div>
-      <div class="confetti abs" id="conf" style="left:960px;top:420px;width:0;height:0"></div>
-      <div class="chip abs" id="openchip" style="left:620px;top:930px"><i class="ti ti-gift"></i> เปิดกล่องแล้วรู้ทันทีว่าได้ไปไหน!</div>
-      <video id="o2" class="clip" data-track-index="2" muted src="assets/trip.mp4" data-start="48.6" data-duration="5.3" data-media-start="9.2" style="object-fit:cover"></video>
+      <!-- 5 open the box: the real page, recorded slowed down so it plays at a full 30 fps -->
+      <div id="openbg" class="clip" data-start="40" data-duration="1" data-track-index="2" style="background:var(--coral)"></div>
+      <video id="o1" class="clip" data-track-index="3" muted src="assets/trip.mp4" data-start="40" data-duration="13.9" data-media-start="0.3" style="object-fit:cover"></video>
+      <div class="confetti abs" id="conf" style="left:960px;top:400px;width:0;height:0"></div>
+      <div class="chip abs" id="openchip" style="left:0;top:0"><i class="ti ti-gift"></i> เปิดกล่องแล้วรู้ทันทีว่าได้ไปไหน!</div>
 
       <!-- 6 train on the map -->
-      <video id="m1" class="clip" data-track-index="3" muted src="assets/train.mp4" data-start="53.9" data-duration="12.5" data-media-start="0.3" style="object-fit:cover"></video>
+      <video id="m1" class="clip" data-track-index="3" muted src="assets/train.mp4" data-start="53.9" data-duration="12.5" data-media-start="0.1" style="object-fit:cover"></video>
       <section id="map" class="clip scene" data-start="53.9" data-duration="12.5" data-track-index="1">
         
         <div class="clip shade" id="shade"></div>
@@ -232,13 +200,13 @@
 
       // ---- wipes: stripes start off-screen left, sweep across and leave right; the cut happens under them
       gsap.set(['#wa', '#wb', '#wc'], { x: -2900 });
-      gsap.set(['#win1', '#win2', '#openchip', '#s1', '#s2', '#s3', '#s4', '#s5', '#s6'], { opacity: 0 });
+      gsap.set('#openchip', { opacity: 0 });
       const wipe = (t) => {
         tl.fromTo('#wa', { x: -2900 }, { x: 2300, duration: 0.85, ease: 'power2.inOut' }, t - 0.42);
         tl.fromTo('#wb', { x: -2900 }, { x: 2300, duration: 0.85, ease: 'power2.inOut' }, t - 0.36);
         tl.fromTo('#wc', { x: -2900 }, { x: 2300, duration: 0.85, ease: 'power2.inOut' }, t - 0.30);
       };
-      [12.4, 18.4, 42.4, 53.9, 66.4, 76.4, 92, 101.4, 111.4].forEach(wipe);
+      [12.4, 66.4, 76.4, 92, 101.4, 111.4].forEach(wipe);
 
       // ---- 1 hook
       tl.fromTo('#h1', { scale: 2.6, opacity: 0, filter: 'blur(20px)' }, { scale: 1, opacity: 1, filter: 'blur(0px)', duration: 0.6, ease: E }, 0.2);
@@ -257,25 +225,28 @@
       tl.fromTo('#logo1', { y: -700, rotate: -20 }, { y: 0, rotate: 0, duration: 0.9, ease: 'bounce.out' }, 12.6);
       tl.fromTo('#rays1', { scale: 0, rotate: 0 }, { scale: 1, rotate: 90, duration: 5.6, ease: 'power1.out' }, 12.6);
       tl.fromTo('#ttl1 span', { y: 160, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: B, stagger: 0.07 }, 13.4);
-      tl.fromTo('#sub1', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 14.2);
-      tl.to('#logo1', { keyframes: [{ scaleY: .9, scaleX: 1.08 }, { scaleY: 1.05, scaleX: .96 }, { scaleY: 1, scaleX: 1 }], duration: 0.5 }, 15.5);
+      tl.fromTo('#sub1', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 13.95);
+      // zoom through the box: its coral side fills the frame and the booking opens out of it
+      tl.to(['#ttl1', '#sub1', '#rays1'], { opacity: 0, filter: 'blur(10px)', duration: 0.2, ease: 'power2.in' }, 14.85);
+      tl.to('#logo1', { scale: 40, transformOrigin: '90px 285px', duration: 0.5, ease: 'power3.in' }, 14.9);
 
-      // ---- 4 booking montage: window tilts in, each cut punches, the step number swaps
-      tl.fromTo('#win1', { rotateY: -24, x: -300, opacity: 0, transformPerspective: 2000 }, { rotateY: 0, x: 0, opacity: 1, duration: 0.8, ease: E }, 18.5);
-      const cuts = [18.4, 23, 27, 31, 35, 39];
-      gsap.set(['#s1', '#s2', '#s3', '#s4', '#s5', '#s6'], { opacity: 0 });
-      cuts.forEach((t, i) => {
-        const s = `#s${i + 1}`;
-        tl.fromTo(s, { x: 120, opacity: 0 }, { x: 0, opacity: 1, duration: 0.45, ease: E }, t + 0.15);
-        tl.fromTo(`${s} .n`, { scale: 0.2 }, { scale: 1, duration: 0.5, ease: B }, t + 0.15);
-        if (i < 5) tl.to(s, { x: -60, opacity: 0, duration: 0.25 }, cuts[i + 1] - 0.25);
-        const end = i < 5 ? cuts[i + 1] : 42.4;
-        tl.fromTo('#win1', { scale: i ? 1.06 : 1 }, { scale: 1.2, transformOrigin: '42% 30%', duration: end - t - (i ? 0 : 0.9), ease: 'power1.inOut' }, i ? t : t + 0.9);
-      });
-      tl.set(['#win1', '#s6'], { opacity: 0 }, 42.4);
-
-      // ---- 5 open: window rises, confetti bursts as the lid pops, then the loading scene full screen
-      tl.fromTo('#win2', { y: 500, scale: .8, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.7, ease: B }, 42.5);
+      // ---- 5 open: an iris from the pay button opens on the real box page; the camera follows the click,
+      // the roulette and the lid, confetti bursts with the lid, then a push toward the plan button
+      // footage marks (seconds of this scene's footage, played from 0.3): box clicked 1.0, names roll
+      // 1.5-3.8, lid pops 3.85, plan button clicked 6.0, loading scene 6.6, map 11.5
+      const at = (m) => 39.7 + m;
+      // camera on the footage: scale about the frame centre plus a shift that keeps the subject placed
+      const cam = (s, y, t, d, ease) => tl.to('#o1', { scale: s, y, duration: d, ease }, t);
+      tl.fromTo('#o1', { scale: 1.7, y: 287, clipPath: 'circle(0% at 1170px 728px)' }, { scale: 1.7, y: 287, clipPath: 'circle(150% at 1170px 728px)', duration: 0.55, ease: 'expo.out' }, 40.0);
+      tl.set('#o1', { clipPath: 'none' }, 40.6);
+      tl.set('#o1', { scale: 1.82 }, at(3.85));                      // the lid pops: a hit, no ease
+      cam(1.7, 287, at(3.86), 0.35, 'power2.out');
+      cam(1.2, 72, at(4.45), 0.7, 'power2.inOut');                   // pull back to the reveal card
+      cam(1.6, -135, at(5.4), 0.5, 'power2.inOut');                  // push toward the plan button
+      cam(1, 0, at(6.55), 0.5, 'expo.out');                          // the loading scene lands large and settles
+      gsap.set('#openchip', { xPercent: -50, left: 960, top: 948 });
+      tl.fromTo('#openchip', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.5, ease: 'expo.out' }, at(4.5));
+      tl.to('#openchip', { opacity: 0, filter: 'blur(8px)', duration: 0.2 }, at(5.35));
       const conf = document.getElementById('conf');
       let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
       const colors = ['#ff6b4a', '#ffb020', '#10a39a', '#7a5af8', '#ffffff'];
@@ -283,14 +254,10 @@
         const c = document.createElement('i');
         c.style.background = colors[i % colors.length];
         conf.appendChild(c);
+        gsap.set(c, { opacity: 0 });
         const a = rnd() * Math.PI * 2, r = 300 + rnd() * 700;
-        tl.fromTo(c, { x: 0, y: 0, rotate: 0, opacity: 1 }, { x: Math.cos(a) * r, y: Math.sin(a) * r - 200, rotate: rnd() * 720, opacity: 0, duration: 1.6 + rnd() * 0.6, ease: 'power2.out' }, 46.2 + rnd() * 0.15);
+        tl.fromTo(c, { x: 0, y: 0, rotate: 0, opacity: 1 }, { x: Math.cos(a) * r, y: Math.sin(a) * r - 200, rotate: rnd() * 720, opacity: 0, duration: 1.4 + rnd() * 0.6, ease: 'power2.out', immediateRender: false }, at(3.85) + rnd() * 0.12);
       }
-      tl.fromTo('#openchip', { y: 140, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: B }, 46.6);
-      tl.to(['#win2', '#openchip'], { opacity: 0, duration: 0.3 }, 48.5);
-      tl.set(['#win2', '#openchip'], { opacity: 0 }, 53.9);
-      tl.fromTo('#o2', { opacity: 0, scale: 1.1 }, { opacity: 1, scale: 1, duration: 0.5, ease: E }, 48.6);
-
       // ---- 6 map: slow push-in, words slam in from the left
       tl.fromTo('#m1', { scale: 1 }, { scale: 1.14, transformOrigin: '45% 55%', duration: 12.5, ease: 'none' }, 53.9);
       tl.fromTo('#shade', { opacity: 0 }, { opacity: 1, duration: 0.6 }, 54.7);

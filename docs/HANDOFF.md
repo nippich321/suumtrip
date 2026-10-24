@@ -1,13 +1,13 @@
 # Handoff — Suumtrip (read this first if you pick up the work)
 
-Last updated: 2026-10-24 19:17 +07 by Agent A. Keep this file current: update it with every push.
+Last updated: 2026-10-24 19:55 +07 by Agent A. Keep this file current: update it with every push.
 
 ## Where things stand
 
 - Live site: https://nippich321.github.io/suumtrip/ (push to `main` deploys in about a minute; the
   workflow tags css/js/data with `?v=<commit>`; never add version numbers by hand).
 - Submission: Saturday 25 October 2026, 12:00–13:30 +07: the website link and a 2-minute `.mp4`
-  (see `docs/TEAM_KIT.md`). Silent video v2 is on the owner's Desktop; the owner records the voice-over.
+  (see `docs/TEAM_KIT.md`). Silent video v3 is on the owner's Desktop (`suumtrip-demo-v3-silent.mp4`); the owner records the voice-over.
 - Agent B has left (owner, 2026-10-24). Agent A owns every file and does not wait for approval;
   the owner wants replies in Thai, code/commits/AGENTS.md in English, and a short report after
   each push of what changed and what was not tested.
@@ -55,10 +55,12 @@ Last updated: 2026-10-24 19:17 +07 by Agent A. Keep this file current: update it
   white background, no text.
 
 - Video: script `docs/VIDEO_SCRIPT.md` (draft 2 follows the v2 cut second by second); silent 2-minute
-  motion-graphics cut made with HyperFrames (`tools/video/hf/index.html`: kinetic text, site footage in a
-  zooming browser window, colour-stripe wipes between scenes, counters, confetti). Output
-  `Desktop/suumtrip-demo-v2-silent.mp4` (not in git; v1 plain cut is `suumtrip-demo-silent.mp4`). The
-  owner records the voice-over.
+  motion-graphics cut made with HyperFrames (`tools/video/hf/`). v3 (owner: v2's 0:15-0:49 was "just
+  zooming", and parts stuttered): the booking is rebuilt at about 2x from the site's own steps with a
+  big cursor (`compositions/booking.html`), each step leaving through something on screen; the box
+  opening is the real page, recorded at 1/5 speed and sped back up (`SLOW` in `tools/video/shoot.py`),
+  so the WebGL scenes play at a full 30 fps instead of 14-18. HyperFrames skills are installed
+  (`npx hyperframes skills`). Output on the Desktop, not in git.
 - Revenue streams (owner, 2026-10-24): the box, hotels' empty rooms, **restaurant partners** (a
   restaurant pays a promotion fee and gets more weight in the draw; still must pass the distance and
   opening-hours rules, and should be labelled "ร้านพาร์ทเนอร์"), corporate gift cards. Restaurant

@@ -1,0 +1,366 @@
+<template>
+  <style>
+    @font-face { font-family: 'Mitr'; font-weight: 500; src: url('assets/fonts/mitr-thai-500-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Mitr'; font-weight: 500; src: url('assets/fonts/mitr-latin-500-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Mitr'; font-weight: 600; src: url('assets/fonts/mitr-thai-600-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Mitr'; font-weight: 600; src: url('assets/fonts/mitr-latin-600-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Anuphan'; font-weight: 500; src: url('assets/fonts/anuphan-thai-500-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Anuphan'; font-weight: 500; src: url('assets/fonts/anuphan-latin-500-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Anuphan'; font-weight: 600; src: url('assets/fonts/anuphan-thai-600-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Anuphan'; font-weight: 600; src: url('assets/fonts/anuphan-latin-600-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Anuphan'; font-weight: 700; src: url('assets/fonts/anuphan-thai-700-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Anuphan'; font-weight: 700; src: url('assets/fonts/anuphan-latin-700-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    /* Booking, rebuilt from the site's own steps (js/app.js) at about twice their size, with a big cursor.
+       Each step leaves through something on screen: the picked card becomes the world, the calendar whips
+       away, the train icon floods the frame, the travellers card is carried into the step rail, the
+       list blurs out, the pay button opens an iris. */
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: 'Anuphan', sans-serif; color: #221c33; }
+    #root * { box-sizing: border-box; }
+    .bk-ground { position: absolute; inset: 0; background: radial-gradient(circle at 18% 22%, #ffd9cc 0, transparent 46%), radial-gradient(circle at 86% 82%, #ffe6b0 0, transparent 46%), #fff7f0; }
+    .bk-world { position: absolute; inset: 0; background: linear-gradient(#ffe3cf, #fff3e6 55%, #fff7f0); }
+    .bk-world i { position: absolute; left: -360px; right: -360px; bottom: 150px; height: 560px; display: block; background: url('assets/scene-old.svg') center bottom / auto 560px no-repeat; }
+    .bk-world b { position: absolute; left: 0; right: 0; bottom: 0; height: 150px; display: block; background: #8e8a99; border-top: 14px solid #d9d4cc; }
+    .bk-veil { position: absolute; inset: 0; background: #fff7f0; }
+    .disp { font-family: 'Mitr', sans-serif; font-weight: 600; }
+    .bk-title { position: absolute; left: 0; width: 1920px; text-align: center; font-size: 76px; line-height: 1.15; }
+    .bk-title span { display: inline-block; }
+    .bk-sub { position: absolute; left: 0; width: 1920px; text-align: center; font-size: 34px; font-weight: 600; color: #6e6680; }
+    .bk-card { position: absolute; background: #fff; border-radius: 34px; box-shadow: 0 30px 80px rgba(34, 28, 51, .16); }
+
+    /* step rail, as the site's stepper */
+    #bk-rail { position: absolute; left: 370px; top: 34px; width: 1180px; height: 96px; border-radius: 48px; background: rgba(255, 255, 255, .94);
+      box-shadow: 0 14px 40px rgba(34, 28, 51, .12); display: flex; align-items: center; z-index: 20; }
+    .rs { width: 196.66px; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+    .rs .dot { width: 40px; height: 40px; border-radius: 50%; background: #efe8f0; color: #6e6680; font-weight: 700; font-size: 22px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .rs .dot .ok { position: absolute; inset: 0; border-radius: 50%; background: #10a39a; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    .rs small { font-size: 21px; font-weight: 700; color: #6e6680; }
+
+    /* 1 category */
+    .cat { position: absolute; top: 300px; width: 520px; height: 600px; overflow: visible; }
+    .cat .im { position: absolute; left: 0; top: 0; width: 520px; height: 340px; border-radius: 34px 34px 0 0; background: #f4e9dc center 70% / cover no-repeat; }
+    .cat .bd { position: absolute; left: 40px; top: 380px; right: 40px; }
+    .cat .bd b { font-family: 'Mitr', sans-serif; font-weight: 600; font-size: 54px; display: flex; gap: 14px; align-items: center; }
+    .cat .bd b i { color: #ff6b4a; }
+    .cat .bd p { font-size: 32px; color: #6e6680; font-weight: 600; margin-top: 8px; }
+    .cat .bd em { display: block; font-style: normal; font-size: 28px; color: #10a39a; font-weight: 700; margin-top: 16px; }
+    .ring { position: absolute; inset: -8px; border: 8px solid #ff6b4a; border-radius: 42px; }
+    .tick { position: absolute; width: 76px; height: 76px; border-radius: 50%; background: #ff6b4a; color: #fff; font-size: 46px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(217, 74, 43, .4); }
+
+    /* 2 calendar */
+    #bk-cal { left: 460px; top: 238px; width: 1000px; height: 610px; padding: 30px 40px; }
+    .cal-h { display: flex; justify-content: space-between; align-items: center; height: 66px; font-size: 40px; }
+    .cal-h i { font-size: 40px; color: #6e6680; }
+    .cal-wk { display: grid; grid-template-columns: repeat(7, 1fr); height: 50px; font-size: 26px; font-weight: 700; color: #6e6680; text-align: center; align-items: center; }
+    .cal-g { display: grid; grid-template-columns: repeat(7, 131.43px); grid-auto-rows: 88px; }
+    .cd { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .cd .hi { position: absolute; inset: 6px 10px; border-radius: 20px; }
+    .cd b { position: relative; font-size: 34px; font-weight: 700; line-height: 1.05; }
+    .cd small { position: relative; font-size: 20px; font-weight: 700; color: #10a39a; font-variant-numeric: tabular-nums; }
+    .cd.we small { color: #a39cb0; }
+    .cd.past { opacity: .28; }
+    #bk-range { position: absolute; left: 0; width: 1920px; top: 878px; display: flex; justify-content: center; gap: 22px; align-items: center; }
+    .pill { background: #fff; border-radius: 999px; padding: 16px 34px; font-size: 34px; font-weight: 700; box-shadow: 0 14px 34px rgba(34, 28, 51, .14); display: flex; gap: 16px; align-items: center; }
+    .pill small { font-size: 24px; color: #6e6680; }
+    .pill.coral { background: #ff6b4a; color: #fff; }
+
+    /* 3 transport */
+    .tr { top: 360px; width: 760px; height: 400px; }
+    .tr .ic { position: absolute; left: 60px; top: 60px; width: 150px; height: 150px; border-radius: 50%; background: #ffe7df; color: #ff6b4a; font-size: 86px; display: flex; align-items: center; justify-content: center; }
+    .tr .ic .fill { position: absolute; inset: 0; border-radius: 50%; background: #ff6b4a; color: #fff; display: flex; align-items: center; justify-content: center; }
+    .tr h3 { position: absolute; left: 250px; top: 92px; font-family: 'Mitr', sans-serif; font-weight: 600; font-size: 58px; }
+    .tr ul { position: absolute; left: 60px; top: 250px; list-style: none; font-size: 36px; font-weight: 600; line-height: 1.6; }
+    .tr ul i { color: #10a39a; }
+    #bk-flood { position: absolute; left: 220px; top: 420px; width: 150px; height: 150px; border-radius: 50%; background: #ff6b4a; z-index: 5; }
+
+    /* 4 travellers */
+    #bk-who { left: 510px; top: 330px; width: 900px; height: 380px; z-index: 6; }
+    .pr { position: absolute; left: 60px; right: 60px; height: 120px; display: flex; align-items: center; justify-content: space-between; }
+    .pr b { font-size: 50px; } .pr small { display: block; font-size: 28px; color: #6e6680; font-weight: 600; }
+    .stp { display: flex; align-items: center; }
+    .stp .bt { width: 84px; height: 84px; border-radius: 20px; border: 3px solid #e6dde6; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #221c33; }
+    .stp .bt.off { color: #cfc8d6; }
+    .stp .num { width: 110px; height: 84px; position: relative; overflow: hidden; font-family: 'Mitr', sans-serif; font-size: 64px; text-align: center; line-height: 84px; }
+    .stp .num span { position: absolute; left: 0; right: 0; top: 0; }
+    #bk-whot { color: #fff; z-index: 6; }
+
+    /* 5 candidates */
+    #bk-list { left: 310px; top: 300px; width: 1300px; height: 640px; padding: 20px 30px; }
+    .cr { position: absolute; left: 20px; right: 20px; height: 96px; border-radius: 22px; display: flex; align-items: center; padding: 0 20px; gap: 26px; }
+    .cr.gold { background: #fff4d6; }
+    .cr .ci { width: 64px; height: 64px; border-radius: 50%; background: #ffe7df; color: #ff6b4a; font-size: 36px; display: flex; align-items: center; justify-content: center; flex: none; }
+    .cr.gold .ci { background: #ffe39a; color: #a86b00; }
+    .cr .cb { width: 560px; position: relative; }
+    .cr .cb b { font-size: 36px; position: relative; display: inline-block; }
+    .cr .cb b .strike { position: absolute; left: -4px; right: -4px; top: 52%; height: 5px; background: #d94a2b; border-radius: 3px; }
+    .cr .cb small { display: block; font-size: 24px; color: #6e6680; font-weight: 600; }
+    .tg { font-size: 20px; background: #ffb020; color: #fff; border-radius: 999px; padding: 2px 14px; margin-left: 10px; vertical-align: middle; }
+    .cr .bar { width: 380px; height: 14px; border-radius: 7px; background: #f1eaf2; overflow: hidden; flex: none; }
+    .cr .bar span { display: block; height: 100%; width: 100%; background: #ff6b4a; border-radius: 7px; }
+    .cr.gold .bar span { background: #ffb020; }
+    .cr .od { width: 120px; text-align: right; font-family: 'Mitr', sans-serif; font-size: 44px; flex: none; }
+    .cr .vt { margin-left: auto; width: 180px; height: 62px; border-radius: 999px; border: 3px solid #e6dde6; font-size: 26px; font-weight: 700; color: #6e6680; position: relative; flex: none; }
+    .cr .vt span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .cr .keep { margin-left: auto; width: 180px; text-align: center; font-size: 24px; font-weight: 700; color: #a86b00; flex: none; }
+
+    /* 6 pay */
+    #bk-pay { left: 410px; top: 280px; width: 1100px; height: 560px; }
+    .qr { position: absolute; left: 50px; top: 50px; width: 380px; text-align: center; }
+    .qr .pp { display: inline-block; background: #0b3b66; color: #fff; font-weight: 700; font-size: 24px; border-radius: 8px; padding: 4px 16px; }
+    .qr img { width: 320px; height: 320px; margin-top: 18px; image-rendering: pixelated; }
+    .qr b { display: block; font-family: 'Mitr', sans-serif; font-size: 46px; margin-top: 8px; }
+    .ps { position: absolute; left: 480px; top: 70px; list-style: none; font-size: 40px; font-weight: 600; }
+    .ps li { display: flex; align-items: center; gap: 22px; height: 84px; }
+    .ps .n { width: 54px; height: 54px; border-radius: 50%; background: #efe8f0; position: relative; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; }
+    .ps .n .ok { position: absolute; inset: 0; border-radius: 50%; background: #10a39a; color: #fff; display: flex; align-items: center; justify-content: center; }
+    #bk-paybtn { position: absolute; left: 480px; top: 400px; width: 560px; height: 96px; border-radius: 999px; background: #ff6b4a; color: #fff; font-size: 36px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 14px; box-shadow: 0 14px 30px rgba(217, 74, 43, .35); }
+    #bk-demo { position: absolute; left: 0; width: 1920px; top: 872px; text-align: center; font-size: 26px; font-weight: 600; color: #8a5a00; }
+    #bk-demo span { background: #fff1d1; border-radius: 999px; padding: 8px 24px; }
+    #bk-t5, #bk-s5, #bk-list, #bk-t6, #bk-pay, #bk-demo { z-index: 7; }
+    #bk-iris { position: absolute; left: 1120px; top: 678px; width: 100px; height: 100px; border-radius: 50%; background: #ff6b4a; z-index: 30; }
+    #bk-in { position: absolute; inset: 0; background: #ff6b4a; z-index: 40; }
+
+    #bk-cur { position: absolute; left: 0; top: 0; width: 60px; height: 78px; z-index: 50; filter: drop-shadow(0 6px 10px rgba(34, 28, 51, .35)); }
+  </style>
+  <div id="root" data-composition-id="booking" data-width="1920" data-height="1080">
+    <div class="bk-ground"></div>
+    <div class="bk-world" id="bk-world"><i></i><b></b></div>
+    <div class="bk-veil" id="bk-veil"></div>
+
+    <!-- 1 category -->
+    <div class="bk-title disp" id="bk-t1" style="top:158px">อยากได้ทริปแนวไหน?</div>
+    <div class="bk-sub" id="bk-s1" style="top:250px">ปลายทางเป็นความลับจนเปิดกล่อง</div>
+    <div class="bk-card cat" id="bk-c0" style="left:130px"><div class="im" style="background-image:url('assets/scene-sea.svg')"></div>
+      <div class="bd"><b><i class="ti ti-beach"></i>ทะเล</b><p>ลมทะเล แสงเย็น อาหารทะเล</p><em>5 ปลายทาง</em></div></div>
+    <div class="bk-card cat" id="bk-c1" style="left:700px"><div class="im" style="background-image:url('assets/scene-old.svg')"></div>
+      <div class="bd"><b><i class="ti ti-building-castle"></i>เมืองเก่า</b><p>ตลาดร้อยปี วัด บ้านไม้</p><em>6 ปลายทาง</em></div>
+      <div class="ring" id="bk-ring1"></div><div class="tick" id="bk-tick1" style="right:-22px;top:-22px"><i class="ti ti-check"></i></div></div>
+    <div class="bk-card cat" id="bk-c2" style="left:1270px"><div class="im" style="background-image:url('assets/scene-nat.svg')"></div>
+      <div class="bd"><b><i class="ti ti-trees"></i>ธรรมชาติ</b><p>หมอก ภูเขา น้ำตก</p><em>4 ปลายทาง</em></div></div>
+
+    <!-- 2 date -->
+    <div class="bk-title disp" id="bk-t2" style="top:130px">ไปวันไหนดี?</div>
+    <div class="bk-card" id="bk-cal">
+      <div class="cal-h"><i class="ti ti-chevron-left"></i><span class="disp">ตุลาคม 2569</span><i class="ti ti-chevron-right"></i></div>
+      <div class="cal-wk"><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span><span>อา</span></div>
+      <div class="cal-g" id="bk-grid"></div>
+    </div>
+    <div id="bk-range">
+      <div class="pill" id="bk-r1"><small>ไป</small>อ. 27 ต.ค.<i class="ti ti-arrow-right"></i><small>กลับ</small>พ. 28 ต.ค.</div>
+      <div class="pill coral" id="bk-r2">1,290 บาท <small style="color:#ffe1d9">/ 2 คน</small></div>
+    </div>
+
+    <!-- 3 transport -->
+    <div class="bk-title disp" id="bk-t3" style="top:158px">เดินทางแบบไหน?</div>
+    <div class="bk-sub" id="bk-s3" style="top:250px">ออกจากกรุงเทพฯ ไม่เกิน 4 ชม.</div>
+    <div class="bk-card tr" id="bk-tr0" style="left:160px">
+      <div class="ic"><i class="ti ti-train"></i><div class="fill" id="bk-icf"><i class="ti ti-train"></i></div></div>
+      <h3>ขนส่งสาธารณะ</h3>
+      <ul><li><i class="ti ti-check"></i> รถไฟตามตารางจริง</li><li><i class="ti ti-check"></i> ฝากกระเป๋าที่พักก่อนเที่ยว</li></ul>
+      <div class="ring" id="bk-ring3"></div><div class="tick" id="bk-tick3" style="right:-22px;top:-22px"><i class="ti ti-check"></i></div>
+    </div>
+    <div class="bk-card tr" id="bk-tr1" style="left:1000px">
+      <div class="ic"><i class="ti ti-steering-wheel"></i></div>
+      <h3>ขับรถเอง</h3>
+      <ul><li><i class="ti ti-check"></i> แผนขับรถพร้อมจุดพัก</li><li><i class="ti ti-check"></i> นำทางด้วย Google Maps</li></ul>
+    </div>
+    <div id="bk-flood"></div>
+
+    <!-- 4 travellers -->
+    <div class="bk-title disp" id="bk-whot" style="top:170px">ผู้เดินทาง</div>
+    <div class="bk-card" id="bk-who">
+      <div class="pr" style="top:40px"><b>ผู้ใหญ่</b>
+        <div class="stp"><div class="bt"><i class="ti ti-minus"></i></div><div class="num"><span>2</span></div><div class="bt"><i class="ti ti-plus"></i></div></div></div>
+      <div class="pr" style="top:210px"><span><b>เด็ก</b><small>ต่ำกว่า 12 ปี</small></span>
+        <div class="stp"><div class="bt" id="bk-kmin"><i class="ti ti-minus"></i></div><div class="num"><span id="bk-k0">0</span><span id="bk-k1">1</span></div><div class="bt"><i class="ti ti-plus"></i></div></div></div>
+    </div>
+
+    <!-- 5 candidates -->
+    <div class="bk-title disp" id="bk-t5" style="top:150px;font-size:68px">กล่องเมืองเก่านี้ อาจได้ไป…</div>
+    <div class="bk-sub" id="bk-s5" style="top:238px">ไม่อยากไปที่ไหน ตัดทิ้งได้ 1 ที่</div>
+    <div class="bk-card" id="bk-list"></div>
+
+    <!-- 6 pay -->
+    <div class="bk-title disp" id="bk-t6" style="top:150px">ชำระเงิน</div>
+    <div class="bk-card" id="bk-pay">
+      <div class="qr"><span class="pp">PromptPay</span><img src="assets/qr.svg" alt="" /><b>1,290 บาท</b></div>
+      <ol class="ps">
+        <li><span class="n">1<span class="ok" id="bk-p1"><i class="ti ti-check"></i></span></span>เปิดแอปธนาคาร</li>
+        <li><span class="n">2<span class="ok" id="bk-p2"><i class="ti ti-check"></i></span></span>สแกน QR นี้</li>
+        <li><span class="n">3<span class="ok" id="bk-p3"><i class="ti ti-check"></i></span></span>กด "ชำระแล้ว"</li>
+      </ol>
+      <div id="bk-paybtn"><i class="ti ti-gift"></i> ชำระแล้ว ไปเปิดกล่อง</div>
+    </div>
+    <div id="bk-demo"><span><i class="ti ti-flask"></i> เดโม: QR ยังไม่ผูกบัญชีรับเงิน</span></div>
+    <div id="bk-iris"></div>
+
+    <div id="bk-rail"></div>
+    <svg id="bk-cur" viewBox="0 0 30 39"><path d="M2 2 L2 30 L9.5 23 L15 35 L20.5 32.5 L15 21 L25.5 21 Z" fill="#fff" stroke="#221c33" stroke-width="2.4" stroke-linejoin="round" /></svg>
+    <div id="bk-in"></div>
+  </div>
+  <script>
+    (() => {
+      const $ = (s) => document.querySelector(s);
+      const tl = gsap.timeline({ paused: true });
+      const IN = 'expo.out', SWAY = 'power2.inOut', PUSH = 'power3.in', POP = 'back.out(1.6)';
+
+      // ---- step rail (the site's six steps)
+      const STEPS = ['แนวทริป', 'วันเดินทาง', 'การเดินทาง', 'ผู้เดินทาง', 'ปลายทาง', 'ชำระเงิน'];
+      $('#bk-rail').innerHTML = STEPS.map((s, i) => `<div class="rs" id="bk-rs${i}"><span class="dot">${i + 1}<span class="ok" id="bk-ok${i}"><i class="ti ti-check"></i></span></span><small>${s}</small></div>`).join('');
+      // ---- calendar: October 2026 starts on a Thursday; Fri-Sun boxes are 1,790, Mon-Thu 1,290 (js/config.js)
+      let cells = '<div></div>'.repeat(3);
+      for (let d = 1; d <= 31; d++) {
+        const wd = (d + 2) % 7; // 0 = Monday
+        const we = wd >= 4;
+        const past = d < 24;
+        cells += `<div class="cd ${we ? 'we' : ''} ${past ? 'past' : ''}" id="bk-d${d}"><span class="hi" id="bk-h${d}"></span><b>${d}</b>${past ? '' : `<small>${we ? '1.79k' : '1.29k'}</small>`}</div>`;
+      }
+      $('#bk-grid').innerHTML = cells;
+      // ---- candidates: the Old Town box (data/destinations.json); odds as js/app.js candidates()
+      const C = [
+        ['อัมพวา', 'สมุทรสงคราม'], ['ตลาดบ้านใหม่', 'ฉะเชิงเทรา'], ['เกาะเมืองอยุธยา', 'พระนครศรีอยุธยา', 1],
+        ['องค์พระปฐมเจดีย์', 'นครปฐม'], ['เมืองราชบุรี', 'ราชบุรี'], ['เมืองเพชร เขาวัง', 'เพชรบุรี']];
+      $('#bk-list').innerHTML = C.map(([n, p, g], i) => `<div class="cr ${g ? 'gold' : ''}" id="bk-cr${i}" style="top:${20 + i * 100}px">
+          <span class="ci"><i class="ti ${g ? 'ti-crown' : 'ti-building-castle'}"></i></span>
+          <div class="cb"><b>${n}${i === 0 ? '<span class="strike" id="bk-strike"></span>' : ''}</b><small>${p}${g ? ' · ที่พักระดับพรีเมียม <span class="tg">ทองคำ</span>' : ''}</small></div>
+          <span class="bar"><span id="bk-bar${i}"></span></span><span class="od"><span id="bk-od${i}">${g ? 10 : 18}</span>%</span>
+          ${g ? '<span class="keep">ตัดไม่ได้</span>' : `<span class="vt" ${i === 0 ? 'id="bk-vt"' : ''}><span ${i === 0 ? 'id="bk-vt0"' : ''}><i class="ti ti-x"></i> ไม่เอา</span>${i === 0 ? '<span id="bk-vt1"><i class="ti ti-arrow-back-up"></i> เอาคืน</span>' : ''}</span>`}
+        </div>`).join('');
+      // titles come in word by word
+      ['#bk-t1', '#bk-t2', '#bk-t3', '#bk-whot', '#bk-t5', '#bk-t6'].forEach((s) => { const el = $(s); el.innerHTML = el.textContent.split(' ').map((w) => `<span>${w}</span>`).join(' '); });
+      const words = (sel, t) => tl.fromTo(`${sel} span`, { opacity: 0, filter: 'blur(10px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.18, ease: 'power2.out', stagger: 0.08 }, t);
+      const leave = (sels, t) => tl.to(sels, { opacity: 0, filter: 'blur(10px)', duration: 0.2, ease: 'power2.in' }, t);
+
+      // everything starts hidden
+      gsap.set(['#bk-world', '#bk-veil', '#bk-cal', '#bk-range', '#bk-t3', '#bk-s3', '#bk-tr0', '#bk-tr1', '#bk-flood', '#bk-who',
+        '#bk-s5', '#bk-list', '#bk-pay', '#bk-demo', '#bk-iris', '.ok', '#bk-ring1', '#bk-tick1', '#bk-ring3', '#bk-tick3', '#bk-icf', '#bk-vt1', '#bk-k1'], { opacity: 0 });
+
+      // cursor: tip at its top-left corner
+      gsap.set('#bk-cur', { x: 2000, y: 1150 });
+      const move = (x, y, t, d = 0.7) => tl.to('#bk-cur', { x, y, duration: d, ease: SWAY }, t);
+      const click = (t) => tl.to('#bk-cur', { keyframes: [{ scale: 0.82, duration: 0.07 }, { scale: 1, duration: 0.12 }], transformOrigin: '0 0' }, t);
+      const done = (i, t) => {
+        tl.fromTo(`#bk-ok${i}`, { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.35, ease: POP }, t);
+        tl.fromTo(`#bk-rs${i} .dot`, { scale: 1 }, { keyframes: [{ scale: 1.25, duration: 0.12 }, { scale: 1, duration: 0.25 }] }, t);
+      };
+
+      // ---- 0: the brand's box fills the frame in coral; it opens like an iris onto the first step
+      tl.fromTo('#bk-in', { clipPath: 'circle(75% at 50% 50%)' }, { clipPath: 'circle(0% at 50% 50%)', duration: 0.45, ease: 'power2.inOut' }, 0);
+      tl.fromTo('#bk-rail', { y: -140 }, { y: 0, duration: 0.6, ease: IN }, 0.2);
+
+      // ---- 1 category (0-4.4)
+      words('#bk-t1', 0.3);
+      tl.fromTo('#bk-s1', { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.6);
+      ['#bk-c0', '#bk-c1', '#bk-c2'].forEach((c, i) => tl.fromTo(c, { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: IN }, 0.45 + i * 0.08));
+      move(400, 600, 1.0, 0.6);
+      move(980, 640, 1.75, 0.5);
+      click(2.3);
+      tl.fromTo('#bk-c1', { scale: 1 }, { scale: 1.04, duration: 0.4, ease: POP }, 2.32);
+      tl.fromTo('#bk-ring1', { opacity: 0, scale: 1.06 }, { opacity: 1, scale: 1, duration: 0.25, ease: 'power2.out' }, 2.32);
+      tl.fromTo('#bk-tick1', { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.4, ease: POP }, 2.36);
+      tl.to(['#bk-c0', '#bk-c2'], { opacity: 0.35, filter: 'blur(3px)', scale: 0.97, duration: 0.35 }, 2.4);
+      done(0, 3.2);
+      // the picked card's picture becomes the world
+      leave(['#bk-t1', '#bk-s1', '#bk-c0', '#bk-c2'], 3.4);
+      tl.to('#bk-cur', { opacity: 0, duration: 0.15 }, 3.4);
+      tl.fromTo('#bk-world', { opacity: 0, clipPath: 'inset(300px 700px 440px 700px round 34px)' }, { opacity: 1, clipPath: 'inset(0px 0px 0px 0px round 0px)', duration: 0.7, ease: SWAY }, 3.45);
+      tl.to('#bk-c1', { opacity: 0, duration: 0.15 }, 3.5);
+      tl.fromTo('#bk-veil', { opacity: 0 }, { opacity: 0.86, duration: 0.45, ease: 'power2.out' }, 4.15);
+
+      // ---- 2 date (4.4-8.6)
+      words('#bk-t2', 4.4);
+      tl.fromTo('#bk-cal', { opacity: 0, scale: 0.7, y: 80 }, { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: IN }, 4.45);
+      tl.fromTo('#bk-grid .cd', { opacity: 0 }, { opacity: (i, el) => (el.classList.contains('past') ? 0.28 : 1), duration: 0.2, stagger: 0.012 }, 4.7);
+      tl.set('#bk-cur', { x: 1500, y: 1120, opacity: 1 }, 5.0);
+      move(705, 792, 5.05, 0.75);
+      click(5.85);
+      tl.fromTo('#bk-h27', { opacity: 1, scale: 0, backgroundColor: '#ff6b4a' }, { opacity: 1, scale: 1, backgroundColor: '#ff6b4a', duration: 0.35, ease: POP }, 5.88);
+      tl.to('#bk-d27', { color: '#ffffff', duration: 0.1 }, 5.9);
+      tl.to('#bk-d27 small', { color: '#ffe1d9', duration: 0.1 }, 5.9);
+      tl.fromTo('#bk-h28', { opacity: 1, scale: 0, backgroundColor: '#ffd9cc' }, { opacity: 1, scale: 1, backgroundColor: '#ffd9cc', duration: 0.35, ease: POP }, 6.05);
+      tl.fromTo('#bk-range', { opacity: 0 }, { opacity: 1, duration: 0.01 }, 6.2);
+      tl.fromTo('#bk-r1', { y: 90, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: IN }, 6.2);
+      tl.fromTo('#bk-r2', { y: 90, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: IN }, 6.3);
+      tl.to('#bk-cur', { x: 1100, y: 1000, duration: 0.6, ease: SWAY }, 6.5);
+      done(1, 7.6);
+      // whip away to the left
+      tl.to(['#bk-t2', '#bk-cal', '#bk-range'], { x: -1500, filter: 'blur(18px)', duration: 0.35, ease: PUSH }, 8.2);
+      tl.to('#bk-cur', { opacity: 0, duration: 0.1 }, 8.2);
+
+      // ---- 3 transport (8.55-12.3)
+      ['#bk-t3', '#bk-s3', '#bk-tr0', '#bk-tr1'].forEach((s, i) => tl.fromTo(s, { x: 2000, opacity: 1, filter: 'blur(18px)' }, { x: 0, opacity: 1, filter: 'blur(0px)', duration: 0.55, ease: IN }, 8.5 + i * 0.05));
+      tl.set('#bk-cur', { x: 1300, y: 1120, opacity: 1 }, 9.0);
+      move(560, 610, 9.05, 0.75);
+      click(9.85);
+      tl.fromTo('#bk-tr0', { scale: 1 }, { scale: 1.03, duration: 0.4, ease: POP }, 9.87);
+      tl.fromTo('#bk-ring3', { opacity: 0, scale: 1.05 }, { opacity: 1, scale: 1, duration: 0.25 }, 9.87);
+      tl.fromTo('#bk-tick3', { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.4, ease: POP }, 9.9);
+      tl.fromTo('#bk-icf', { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.35, ease: POP }, 9.9);
+      tl.to('#bk-tr1', { opacity: 0.35, filter: 'blur(3px)', duration: 0.35 }, 9.95);
+      done(2, 10.6);
+      tl.to('#bk-cur', { x: 330, y: 560, duration: 0.5, ease: SWAY }, 10.7);
+      // zoom through the train icon: its coral fill becomes the next frame
+      tl.to('#bk-cur', { opacity: 0, duration: 0.1 }, 11.25);
+      tl.set('#bk-flood', { opacity: 1, scale: 1.03 }, 11.3);
+      tl.to('#bk-flood', { scale: 26, duration: 0.55, ease: PUSH }, 11.3);
+
+      // ---- 4 travellers (11.9-15.8), on coral
+      tl.set(['#bk-t3', '#bk-s3', '#bk-tr0', '#bk-tr1'], { opacity: 0 }, 11.86);
+      words('#bk-whot', 11.95);
+      tl.fromTo('#bk-who', { opacity: 0, y: 260, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: IN }, 11.95);
+      tl.set('#bk-cur', { x: 1600, y: 1120, opacity: 1 }, 12.5);
+      move(1300, 585, 12.55, 0.7);
+      click(13.3);
+      tl.to('#bk-k0', { y: -84, opacity: 0, duration: 0.25, ease: 'power2.in' }, 13.32);
+      tl.fromTo('#bk-k1', { y: 84, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: POP }, 13.4);
+      tl.to('#bk-kmin', { color: '#221c33', duration: 0.2 }, 13.4);
+      tl.to('#bk-cur', { x: 1500, y: 980, duration: 0.5, ease: SWAY }, 13.7);
+      // carried into the rail's fourth step
+      tl.to('#bk-cur', { opacity: 0, duration: 0.1 }, 14.4);
+      leave('#bk-whot', 14.4);
+      tl.to('#bk-who', { x: 98, y: -438, scale: 0.05, opacity: 0.2, filter: 'blur(6px)', duration: 0.55, ease: PUSH }, 14.45);
+      done(3, 14.95);
+      tl.to('#bk-flood', { backgroundColor: '#fff7f0', duration: 0.4, ease: SWAY }, 15.0);
+
+      // ---- 5 candidates (15.4-21.3)
+      words('#bk-t5', 15.4);
+      tl.fromTo('#bk-s5', { opacity: 0 }, { opacity: 1, duration: 0.3 }, 15.8);
+      tl.fromTo('#bk-list', { opacity: 0, y: 100 }, { opacity: 1, y: 0, duration: 0.7, ease: IN }, 15.5);
+      tl.fromTo('.cr', { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.5, ease: IN, stagger: 0.06 }, 15.7);
+      C.forEach(([, , g], i) => tl.fromTo(`#bk-bar${i}`, { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: g ? 0.1 : 0.18, duration: 0.7, ease: IN }, 16.1 + i * 0.06));
+      tl.set('#bk-cur', { x: 1700, y: 1120, opacity: 1 }, 16.6);
+      move(1505, 380, 16.65, 0.8);
+      click(17.6);
+      tl.to('#bk-vt0', { opacity: 0, duration: 0.12 }, 17.62);
+      tl.fromTo('#bk-vt1', { opacity: 0 }, { opacity: 1, duration: 0.15 }, 17.7);
+      tl.to('#bk-cr0', { opacity: 0.45, duration: 0.3 }, 17.65);
+      tl.fromTo('#bk-strike', { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: 1, duration: 0.3, ease: 'power2.out' }, 17.65);
+      tl.to('#bk-bar0', { scaleX: 0, duration: 0.5, ease: 'power2.inOut' }, 17.7);
+      // the other ordinary destinations share its odds: 90 % / 4 = 23 % each (rounded, as on the site)
+      [1, 3, 4, 5].forEach((i) => tl.to(`#bk-bar${i}`, { scaleX: 0.23, duration: 0.6, ease: POP }, 17.95));
+      const roll = (sel, from, to, t) => { const o = { v: from }; tl.to(o, { v: to, duration: 0.6, ease: 'power2.out', onUpdate: () => { $(sel).textContent = Math.round(o.v); } }, t); };
+      roll('#bk-od0', 18, 0, 17.7);
+      [1, 3, 4, 5].forEach((i) => roll(`#bk-od${i}`, 18, 23, 17.95));
+      tl.to('#bk-cur', { x: 1640, y: 900, duration: 0.6, ease: SWAY }, 18.4);
+      done(4, 20.4);
+      leave(['#bk-t5', '#bk-s5', '#bk-list'], 20.9);
+      tl.to('#bk-cur', { opacity: 0, duration: 0.1 }, 20.9);
+
+      // ---- 6 pay (21.1-25.6)
+      words('#bk-t6', 21.1);
+      tl.fromTo('#bk-pay', { opacity: 0, filter: 'blur(10px)', scale: 0.94 }, { opacity: 1, filter: 'blur(0px)', scale: 1, duration: 0.5, ease: IN }, 21.15);
+      tl.fromTo('#bk-demo', { opacity: 0 }, { opacity: 1, duration: 0.3 }, 21.6);
+      ['#bk-p1', '#bk-p2', '#bk-p3'].forEach((s, i) => tl.fromTo(s, { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.35, ease: POP }, 22.0 + i * 0.45));
+      tl.set('#bk-cur', { x: 1500, y: 1120, opacity: 1 }, 22.6);
+      move(1180, 735, 22.65, 0.8);
+      click(23.6);
+      tl.to('#bk-paybtn', { keyframes: [{ scale: 0.95, duration: 0.08 }, { scale: 1, duration: 0.15 }] }, 23.6);
+      done(5, 23.7);
+      // an iris from the button opens onto the box
+      tl.set('#bk-iris', { opacity: 1, scale: 0.2 }, 23.85);
+      tl.to('#bk-iris', { scale: 46, duration: 0.6, ease: PUSH }, 23.85);
+      tl.to('#bk-cur', { opacity: 0, duration: 0.1 }, 24.2);
+
+      window.__timelines['booking'] = tl;
+    })();
+  </script>
+</template>

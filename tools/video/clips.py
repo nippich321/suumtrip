@@ -9,9 +9,11 @@ import sys
 root, out = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
 out.mkdir(parents=True, exist_ok=True)
 for d in sorted(p for p in root.iterdir() if (p / "frames.txt").exists()):
+    # a scene recorded with the page slowed down (shoot.py SLOW) is sped back up here
+    k = float((d / "speed.txt").read_text()) if (d / "speed.txt").exists() else 1.0
     lines = [line.split() for line in (d / "frames.txt").read_text().splitlines()]
-    frames = [(n, float(t)) for n, t in lines if n != "END"]
-    end = float(lines[-1][1])
+    frames = [(n, float(t) * k) for n, t in lines if n != "END"]
+    end = float(lines[-1][1]) * k
     lst = d / "concat.txt"
     with lst.open("w") as f:
         for i, (n, t) in enumerate(frames):

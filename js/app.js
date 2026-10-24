@@ -84,15 +84,15 @@ function summaryHtml(n) {
   return `
     <div class="bk-sum">
       <div class="bk-sum-head"><span class="bk-sum-ic"><i class="ti ti-gift"></i></span>
-        <div><b>กล่องสุ่มทริป${CATEGORIES[S.cat].label}</b><small>2 วัน 1 คืน · รวมที่พัก 1 คืนและแผนเที่ยว</small></div></div>
+        <div><b>กล่องสุ่มทริป${CATEGORIES[S.cat].label}</b><small>2 วัน 1 คืน · รวมที่พัก</small></div></div>
       <dl class="bk-rows">${rows.map(([id, icon, k, v]) => `
         <div class="bk-row"><dt><i class="ti ${icon}"></i> ${k}</dt>
           <dd>${esc(v)}${stepOf(id) < n ? ` <a href="#${id}" class="bk-edit">แก้ไข</a>` : ''}</dd></div>`).join('')}
       </dl>
-      <div class="bk-price"><span>ราคากล่อง (2 คน)<small>${isWeekend(S.date) ? 'ราคาวันศุกร์–อาทิตย์' : 'ราคาวันจันทร์–พฤหัสฯ'}</small></span><b>${fmt(price())} บาท</b></div>
-      ${people !== 2 ? `<p class="bk-note"><i class="ti ti-info-circle"></i> ไป ${people} คน ทีมงานจะติดต่อแจ้งราคาก่อนเดินทาง</p>` : ''}
+      <div class="bk-price"><span>ราคากล่อง (2 คน)<small>${isWeekend(S.date) ? 'ศ–อา' : 'จ–พฤ'}</small></span><b>${fmt(price())} บาท</b></div>
+      ${people !== 2 ? `<p class="bk-note"><i class="ti ti-info-circle"></i> ${people} คน ทีมงานแจ้งราคาให้</p>` : ''}
       ${ctaHtml(n)}
-      <p class="fine">ไม่รวมค่าเดินทางและค่าอาหาร (มีประมาณการให้ในแผน) · ปลายทางเป็นความลับจนเปิดกล่อง</p>
+      <p class="fine">ไม่รวมค่าเดินทางและอาหาร</p>
     </div>`;
 }
 
@@ -201,12 +201,12 @@ const screens = {
       <button class="choice choice-pic ${S.cat === k ? 'on' : ''}" role="radio" aria-checked="${S.cat === k}" data-cat="${k}">
         <span class="choice-img" style="background-image:url('img/loader/scene-${k}.svg')"></span>
         <span class="choice-body"><b><i class="ti ${v.icon}"></i> ${v.label}</b><small>${v.blurb}</small>
-          <small class="choice-meta">${count(k)} ปลายทางที่อาจได้</small></span>
+          <small class="choice-meta">${count(k)} ปลายทาง</small></span>
         ${CHECK_MARK}
       </button>`).join('');
     app.innerHTML = wizard('cat', {
       title: 'อยากได้ทริปแนวไหน?',
-      sub: 'เลือกแค่แนว ที่เหลือกล่องจัดให้ ปลายทางจะเป็นความลับจนกว่าคุณจะเปิดกล่อง',
+      sub: 'ปลายทางเป็นความลับจนเปิดกล่อง',
       body: `<div class="choices three" role="radiogroup" aria-label="แนวทริป">${cards}</div>`,
     });
     app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { S.cat = b.dataset.cat; S.veto = null; pickIn('data-cat', S.cat); refreshSide('cat'); }));
@@ -217,7 +217,7 @@ const screens = {
       <span><small>กลับ</small><b>${thaiDate(returnIso(S.date))}</b></span><span class="bk-range-tag">2 วัน 1 คืน</span>`;
     app.innerHTML = wizard('date', {
       title: 'ไปวันไหนดี?',
-      sub: 'เลือกวันไป วันกลับคือวันถัดไป · วันจันทร์–พฤหัสฯ ราคาถูกกว่า',
+      sub: '2 วัน 1 คืน · จ–พฤ ราคาถูกกว่า',
       body: `<div id="date"></div><div class="bk-range" id="range">${range()}</div>`,
     });
     mountDatePicker(app.querySelector('#date'), {
@@ -229,19 +229,19 @@ const screens = {
 
   choose() {
     const facts = {
-      pub: ['รถไฟตามตารางของการรถไฟฯ เลือกรอบเองได้', 'ลงสถานีแล้วไปฝากกระเป๋าที่ที่พักก่อน', 'ในพื้นที่ต่อสองแถวหรือเดิน มีค่าใช้จ่ายประมาณให้'],
-      self: ['แผนขับรถพร้อมจุดพักและปั๊มน้ำมัน', 'เลือกเวลาออกจากบ้านเองได้', 'กดนำทางต่อด้วย Google Maps'],
+      pub: ['รถไฟตามตารางจริง', 'ฝากกระเป๋าที่พักก่อนเที่ยว'],
+      self: ['แผนขับรถพร้อมจุดพัก', 'นำทางด้วย Google Maps'],
     };
     const cards = Object.entries(TRANSPORT).map(([k, v]) => `
       <button class="choice choice-row ${S.transport === k ? 'on' : ''}" role="radio" aria-checked="${S.transport === k}" data-tr="${k}">
         <span class="choice-ic"><i class="ti ${v.icon}"></i></span>
-        <span class="choice-body"><b>${v.label}</b><small>${v.note}</small>
+        <span class="choice-body"><b>${v.label}</b>
           <ul class="choice-list">${facts[k].map((f) => `<li><i class="ti ti-check"></i> ${f}</li>`).join('')}</ul></span>
         ${CHECK_MARK}
       </button>`).join('');
     app.innerHTML = wizard('choose', {
       title: 'เดินทางแบบไหน?',
-      sub: 'ออกจากกรุงเทพฯ ทุกปลายทางไม่เกินราว 4 ชั่วโมง',
+      sub: 'ออกจากกรุงเทพฯ ไม่เกิน 4 ชม.',
       body: `<div class="choices two" role="radiogroup" aria-label="วิธีเดินทาง">${cards}</div>`,
     });
     app.querySelectorAll('[data-tr]').forEach((b) => (b.onclick = () => { S.transport = b.dataset.tr; pickIn('data-tr', S.transport); refreshSide('choose'); }));
@@ -250,33 +250,30 @@ const screens = {
   who() {
     const W = S.who;
     const counter = (key, label, hint, min) => `
-      <div class="ppl-row"><div><b>${label}</b><span class="small muted">${hint}</span></div>
-        <div class="ppl-step" role="group" aria-label="${label}">
+      <div class="pp-row"><span class="pp-lbl"><b>${label}</b>${hint ? `<small>${hint}</small>` : ''}</span>
+        <span class="ppl-step" role="group" aria-label="${label}">
           <button type="button" data-step="${key}:-1" aria-label="ลด${label}" ${W[key] <= min ? 'disabled' : ''}><i class="ti ti-minus"></i></button>
           <output id="n-${key}" aria-live="polite">${W[key]}</output>
           <button type="button" data-step="${key}:1" aria-label="เพิ่ม${label}" ${W[key] >= 10 ? 'disabled' : ''}><i class="ti ti-plus"></i></button>
-        </div></div>`;
-    const field = (key, label, type, auto, ph) => `
-      <label class="field"><span>${label} <b class="req">*</b></span>
-        <input name="${key}" type="${type}" autocomplete="${auto}" placeholder="${ph}" value="${esc(W[key])}" aria-required="true" ${type === 'tel' ? 'inputmode="tel"' : ''}>
-        <small class="hint" id="h-${key}" hidden></small></label>`;
+        </span></div>`;
+    // the label sits in the box and moves up once something is typed
+    const field = (key, label, type, auto, icon) => `
+      <label class="in"><i class="ti ${icon}"></i>
+        <input name="${key}" type="${type}" autocomplete="${auto}" placeholder=" " value="${esc(W[key])}" aria-required="true" ${type === 'tel' ? 'inputmode="tel"' : ''}>
+        <span>${label} *</span></label>
+      <small class="hint" id="h-${key}" hidden></small>`;
     app.innerHTML = wizard('who', {
-      title: 'ใครไปบ้าง?',
-      sub: 'จำนวนผู้เดินทางและช่องทางติดต่อ ทีมงานจะส่งรายละเอียดทริปให้ทางนี้',
+      title: 'ผู้เดินทาง',
       body: `
-        <div class="bk-card">
-          <h3 class="bk-card-h"><i class="ti ti-users"></i> จำนวนผู้เดินทาง</h3>
-          ${counter('adults', 'ผู้ใหญ่', '12 ปีขึ้นไป', 1)}
+        <div class="bk-card who2">
+          ${counter('adults', 'ผู้ใหญ่', '', 1)}
           ${counter('kids', 'เด็ก', 'ต่ำกว่า 12 ปี', 0)}
         </div>
-        <div class="bk-card">
-          <h3 class="bk-card-h"><i class="ti ti-address-book"></i> ข้อมูลผู้ติดต่อ</h3>
-          ${field('name', 'ชื่อ-นามสกุล', 'text', 'name', 'สมชาย ใจดี')}
-          <div class="row2">
-            ${field('phone', 'เบอร์โทรศัพท์', 'tel', 'tel', '0812345678')}
-            ${field('email', 'อีเมล', 'email', 'email', 'you@example.com')}
-          </div>
-          <p class="fine"><b class="req">*</b> จำเป็นต้องกรอกเมื่อเปิดขายจริง ตอนนี้เว็บอยู่ระหว่างพัฒนา จึงข้ามไปก่อนได้ · ข้อมูลอยู่ในเบราว์เซอร์นี้เท่านั้น ยังไม่ได้ส่งไปที่ไหน</p>
+        <div class="bk-card who2">
+          <div class="who2-h"><b>ผู้ติดต่อ</b><span class="tag-dev">ช่วงทดสอบ ข้ามได้</span></div>
+          ${field('name', 'ชื่อ-นามสกุล', 'text', 'name', 'ti-user')}
+          ${field('phone', 'เบอร์โทร', 'tel', 'tel', 'ti-phone')}
+          ${field('email', 'อีเมล', 'email', 'email', 'ti-mail')}
         </div>`,
     });
     app.querySelectorAll('[data-step]').forEach((b) => (b.onclick = () => {
@@ -287,15 +284,15 @@ const screens = {
       app.querySelector(`[data-step="${key}:1"]`).disabled = W[key] >= 10;
       refreshSide('who');
     }));
-    // checks show a hint but never block "next" while the site is in development
+    // a wrong format shows a short hint; nothing blocks "next" while the site is in testing
     const RULES = {
-      name: (v) => (v.trim().length >= 2 ? '' : 'กรอกชื่อ-นามสกุล'),
-      phone: (v) => (/^0\d{8,9}$/.test(v.replace(/[\s-]/g, '')) ? '' : 'เบอร์โทร 9-10 หลัก ขึ้นต้นด้วย 0'),
-      email: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'รูปแบบอีเมลยังไม่ถูกต้อง'),
+      name: (v) => (v.trim().length >= 2 ? '' : 'ชื่อสั้นเกินไป'),
+      phone: (v) => (/^0\d{8,9}$/.test(v.replace(/[\s-]/g, '')) ? '' : 'เบอร์ 9–10 หลัก ขึ้นต้นด้วย 0'),
+      email: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'อีเมลไม่ถูกต้อง'),
     };
-    app.querySelectorAll('.field input').forEach((inp) => {
+    app.querySelectorAll('.in input').forEach((inp) => {
       const hint = app.querySelector(`#h-${inp.name}`);
-      const test = () => { const msg = inp.value ? RULES[inp.name](inp.value) : 'ยังไม่ได้กรอก (ข้ามได้ระหว่างพัฒนา)'; hint.textContent = msg; hint.hidden = !msg; inp.setAttribute('aria-invalid', !!msg && !!inp.value); };
+      const test = () => { const msg = inp.value ? RULES[inp.name](inp.value) : ''; hint.textContent = msg; hint.hidden = !msg; inp.setAttribute('aria-invalid', !!msg); };
       inp.oninput = () => { W[inp.name] = inp.value; if (!hint.hidden) test(); };
       inp.onblur = test;
     });
@@ -316,7 +313,7 @@ const screens = {
       </div>`).join('');
     app.innerHTML = wizard('cands', {
       title: `กล่อง${CATEGORIES[S.cat].label}นี้ อาจได้ไป…`,
-      sub: 'ทุกที่มีโอกาสออกตามตัวเลข ไม่อยากไปที่ไหน ตัดทิ้งได้ฟรี 1 ที่ แล้วโอกาสจะไปเพิ่มให้ที่อื่น',
+      sub: 'ไม่อยากไปที่ไหน ตัดทิ้งได้ 1 ที่',
       body: `<div class="cands2">${rows}</div>`,
     }, still);
     app.querySelectorAll('[data-veto]').forEach((b) => (b.onclick = () => { S.veto = S.veto === b.dataset.veto ? null : b.dataset.veto; screens.cands(true); }));
@@ -329,18 +326,18 @@ const screens = {
     qr.make();
     app.innerHTML = wizard('pay', {
       title: 'ชำระเงิน',
-      sub: 'สแกนพร้อมเพย์ด้วยแอปธนาคารใดก็ได้',
+      sub: 'สแกนจ่ายด้วยแอปธนาคาร',
       body: `
         <div class="bk-card pay2">
           <div class="pay2-qr"><span class="pp">PromptPay</span>${qr.createSvgTag({ cellSize: 5, margin: 2, scalable: true })}
             <b class="pay2-amt">${fmt(price())} บาท</b></div>
           <ol class="pay2-steps">
-            <li>เปิดแอปธนาคารแล้วเลือกสแกนจ่าย</li>
-            <li>สแกน QR นี้ ยอด <b>${fmt(price())} บาท</b></li>
-            <li>จ่ายเสร็จแล้วกด "ชำระแล้ว ไปเปิดกล่อง"</li>
+            <li>เปิดแอปธนาคาร</li>
+            <li>สแกน QR นี้</li>
+            <li>กด "ชำระแล้ว"</li>
           </ol>
         </div>
-        <p class="bk-demo"><i class="ti ti-flask"></i> เวอร์ชันสาธิต: QR สร้างตามมาตรฐานพร้อมเพย์จริง แต่ยังไม่ได้ตั้งบัญชีรับเงิน กดปุ่มชำระแล้วไปต่อได้เลย</p>`,
+        <p class="bk-demo"><i class="ti ti-flask"></i> เดโม: QR ยังไม่ผูกบัญชีรับเงิน กด "ชำระแล้ว" ได้เลย</p>`,
     });
   },
 

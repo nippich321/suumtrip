@@ -123,69 +123,12 @@
       <!-- 5 open the box: the real page, recorded slowed down so it plays at a full 30 fps -->
       <div id="openbg" class="clip" data-start="40" data-duration="1" data-track-index="2" style="background:var(--coral)"></div>
       <video id="o1" class="clip" data-track-index="3" muted src="assets/trip.mp4" data-start="40" data-duration="13.9" data-media-start="0.3" style="object-fit:cover"></video>
+      <div id="dog" data-composition-id="dog" data-composition-src="compositions/dog.html" data-start="46" data-duration="5.6" data-track-index="4" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
       <div class="confetti abs" id="conf" style="left:960px;top:400px;width:0;height:0"></div>
       <div class="chip abs" id="openchip" style="left:0;top:0"><i class="ti ti-gift"></i> เปิดกล่องแล้วรู้ทันทีว่าได้ไปไหน!</div>
 
-      <!-- 6 train on the map -->
-      <video id="m1" class="clip" data-track-index="3" muted src="assets/train.mp4" data-start="53.9" data-duration="12.5" data-media-start="0.1" style="object-fit:cover"></video>
-      <section id="map" class="clip scene" data-start="53.9" data-duration="12.5" data-track-index="1">
-        
-        <div class="clip shade" id="shade"></div>
-        <div class="kt disp big" id="k1" style="top:250px">รถไฟจริง</div>
-        <div class="kt disp" id="k2" style="top:400px;font-size:76px;color:var(--sun)">ตามตารางการรถไฟฯ</div>
-        <div class="kt" id="k3" style="top:520px;font-size:44px;font-weight:600">วิ่งตามรางจริงบนแผนที่ 3D<br>แผนครบทุกชั่วโมง</div>
-        <div class="chip abs" id="k4" style="left:110px;top:720px"><i class="ti ti-train"></i> ขบวน 257 · 07:45 ธนบุรี → นครปฐม 08:55</div>
-      </section>
-
-      <!-- 7 features -->
-      <section id="feat" class="clip scene grad center" data-start="66.4" data-duration="10" data-track-index="0">
-        <div class="disp abs" id="fh" style="top:90px;font-size:84px">ทริปที่คิดมาแล้วทุกจุด</div>
-        <div class="feat abs" id="f1" style="left:160px;top:260px"><i class="ti ti-luggage"></i><div><b>ลงสถานี ฝากกระเป๋าก่อน</b><small>ไม่ต้องหิ้วเที่ยว</small></div></div>
-        <div class="feat abs" id="f2" style="left:1000px;top:260px"><i class="ti ti-route"></i><div><b>ที่เที่ยวอยู่ใกล้กัน</b><small>ไม่วิ่งไปกลับ</small></div></div>
-        <div class="feat abs" id="f3" style="left:160px;top:620px"><i class="ti ti-gas-station"></i><div><b>ขับรถเองก็ได้</b><small>มีจุดพักและปั๊มตลอดทาง</small></div></div>
-        <div class="feat abs" id="f4" style="left:1000px;top:620px"><i class="ti ti-brand-google-maps"></i><div><b>นำทางต่อ Google Maps</b><small>กดครั้งเดียว</small></div></div>
-      </section>
-
-      <!-- 8 money -->
-      <section id="money" class="clip scene dark" data-start="76.4" data-duration="15.6" data-track-index="1">
-        <div class="disp abs" id="mh" style="left:0;width:1920px;text-align:center;top:90px;font-size:72px">หาเงินจากห้องว่างของโรงแรม</div>
-        <div class="abs center" id="mc1" style="left:80px;top:300px;width:520px"><div class="lab">ลูกค้าจ่าย</div><div class="num" id="n1">0</div><div class="lab">บาท / กล่อง</div></div>
-        <div class="abs op" id="mo1" style="left:625px;top:330px">−</div>
-        <div class="abs center" id="mc2" style="left:700px;top:300px;width:520px"><div class="lab">ค่าห้องเฉลี่ย</div><div class="num" id="n2" style="color:#cbc5d8">0</div><div class="lab">ปกติ 850 · ทองคำ 1,900</div></div>
-        <div class="abs op" id="mo2" style="left:1245px;top:330px">=</div>
-        <div class="abs center" id="mc3" style="left:1330px;top:300px;width:520px"><div class="lab">เหลือให้เรา</div><div class="num" id="n3" style="color:var(--coral)">0</div><div class="lab">ราว 26%</div></div>
-        <div class="bar" id="bar"><div class="room" id="broom"></div><div class="ours" id="bours"></div></div>
-        <div class="abs" id="msrc" style="left:0;width:1920px;text-align:center;top:890px;font-size:34px;font-weight:600;color:#cbc5d8">ถามโรงแรมจริง 5 แห่ง · low season: 1,800 → 1,300 · 2,500 → 1,900 บาท</div>
-        <div class="abs" id="mtag" style="left:0;width:1920px;text-align:center;top:960px"><span class="tag">ค่าห้องเฉลี่ยและส่วนที่เหลือเป็นตัวอย่างจากแผนราคา</span></div>
-      </section>
-
-      <!-- 9 revenue -->
-      <section id="rev" class="clip scene grad" data-start="92" data-duration="9.4" data-track-index="0">
-        <div class="disp abs" id="rh" style="left:0;width:1920px;text-align:center;top:90px;font-size:84px">รายได้ 4 ทาง</div>
-        <div class="rev abs" id="r1" style="left:110px;top:290px"><i class="ti ti-gift"></i><b>กล่องสุ่มทริป</b><small>1,290 บาท / 2 คน</small></div>
-        <div class="rev abs" id="r2" style="left:550px;top:290px"><i class="ti ti-bed"></i><b>ห้องว่าง<br>จากโรงแรม</b><small>ไม่ต้องลดราคาหน้าเว็บ</small></div>
-        <div class="rev abs" id="r3" style="left:990px;top:290px"><i class="ti ti-tools-kitchen-2"></i><b>ร้านอาหาร<br>พาร์ทเนอร์</b><small>จ่ายค่าโปรโมต<br>ถูกสุ่มเจอบ่อยขึ้น</small></div>
-        <div class="rev abs" id="r4" style="left:1430px;top:290px"><i class="ti ti-building-skyscraper"></i><b>บัตรของขวัญ<br>องค์กร</b><small>ขายทีละหลายสิบใบ</small></div>
-      </section>
-
-      <!-- 10 OTA vs us -->
-      <section id="ota" class="clip scene cream" data-start="101.4" data-duration="10" data-track-index="1">
-        <div class="half" id="left" style="left:0;background:#ece8e3;color:#8f87a3">
-          <h2>แอปจองโรงแรม</h2><ul><li>ขายแค่ห้อง</li><li>ต้องเลือกเองทุกอย่าง</li><li>แข่งราคาห้อง</li></ul></div>
-        <div class="half" id="right" style="left:960px;background:var(--coral);color:#fff">
-          <h2>สุ่มทริป</h2><ul><li>✓ ขายทั้งทริป</li><li>✓ ตัดสินใจแทน</li><li>✓ รถไฟจริง แผนรายชั่วโมง</li><li>✓ พาไปเมืองรอง</li></ul></div>
-        <div class="disp abs" id="vs" style="left:880px;top:470px;width:160px;height:160px;border-radius:50%;background:var(--ink);color:#fff;font-size:64px;display:flex;align-items:center;justify-content:center">VS</div>
-        <div class="abs" id="refs" style="left:0;width:1920px;text-align:center;top:960px;font-size:30px;font-weight:600;color:var(--ink)">โมเดลเดียวกับ JAL「どこかにマイル」· JR East「どこかにビューーン!」· Waynabox</div>
-      </section>
-
-      <!-- 11 end -->
-      <section id="end" class="clip scene grad center" data-start="111.4" data-duration="8.2" data-track-index="0">
-        <div class="rays abs" id="rays2" style="left:210px;top:-210px"></div>
-        <img class="logo" id="logo2" src="assets/logo-512.png" alt="" style="width:330px;height:330px" />
-        <div class="disp ttl" id="ttl2" style="font-size:160px">สุ่มทริป</div>
-        <div class="sub" id="sub2">ไม่ต้องคิด แค่ไป</div>
-        <div id="url2" style="font-size:40px;font-weight:700;color:var(--muted);margin-top:16px">nippich321.github.io/suumtrip</div>
-      </section>
+      <!-- 6-11 train map, features, money, revenue, OTA, end card (compositions/story.html) -->
+      <div id="story" data-composition-id="story" data-composition-src="compositions/story.html" data-start="53.9" data-duration="65.7" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
 
       <!-- wipes -->
       <div class="clip wipe w1" id="wa" data-start="0" data-duration="119.6" data-track-index="5"></div>
@@ -206,7 +149,7 @@
         tl.fromTo('#wb', { x: -2900 }, { x: 2300, duration: 0.85, ease: 'power2.inOut' }, t - 0.36);
         tl.fromTo('#wc', { x: -2900 }, { x: 2300, duration: 0.85, ease: 'power2.inOut' }, t - 0.30);
       };
-      [12.4, 66.4, 76.4, 92, 101.4, 111.4].forEach(wipe);
+      [12.4].forEach(wipe);
 
       // ---- 1 hook
       tl.fromTo('#h1', { scale: 2.6, opacity: 0, filter: 'blur(20px)' }, { scale: 1, opacity: 1, filter: 'blur(0px)', duration: 0.6, ease: E }, 0.2);
@@ -258,59 +201,6 @@
         const a = rnd() * Math.PI * 2, r = 300 + rnd() * 700;
         tl.fromTo(c, { x: 0, y: 0, rotate: 0, opacity: 1 }, { x: Math.cos(a) * r, y: Math.sin(a) * r - 200, rotate: rnd() * 720, opacity: 0, duration: 1.4 + rnd() * 0.6, ease: 'power2.out', immediateRender: false }, at(3.85) + rnd() * 0.12);
       }
-      // ---- 6 map: slow push-in, words slam in from the left
-      tl.fromTo('#m1', { scale: 1 }, { scale: 1.14, transformOrigin: '45% 55%', duration: 12.5, ease: 'none' }, 53.9);
-      tl.fromTo('#shade', { opacity: 0 }, { opacity: 1, duration: 0.6 }, 54.7);
-      tl.fromTo('#k1', { x: -500, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: B }, 54.9);
-      tl.fromTo('#k2', { x: -500, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: B }, 55.3);
-      tl.fromTo('#k3', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: E }, 55.9);
-      tl.fromTo('#k4', { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: B }, 56.7);
-      tl.to(['#k1', '#k2', '#k3', '#k4', '#shade'], { opacity: 0, duration: 0.4 }, 61.5);
-      
-      // ---- 7 features: four cards pop in a burst
-      tl.fromTo('#fh', { y: -80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: E }, 66.6);
-      ['#f1', '#f2', '#f3', '#f4'].forEach((f, i) => {
-        tl.fromTo(f, { scale: 0.4, opacity: 0, rotate: i % 2 ? 6 : -6 }, { scale: 1, opacity: 1, rotate: 0, duration: 0.5, ease: B }, 67.1 + i * 0.45);
-        tl.fromTo(`${f} i`, { rotate: -30, scale: .5 }, { rotate: 0, scale: 1, duration: 0.6, ease: B }, 67.2 + i * 0.45);
-      });
-      tl.to(['#f1', '#f2', '#f3', '#f4'], { y: -12, duration: 1.2, ease: 'sine.inOut', yoyo: true, repeat: 3, stagger: 0.2 }, 69.5);
-
-      // ---- 8 money: numbers count up, the bar splits into room cost and our share
-      const count = (sel, to, at) => { const o = { v: 0 }; tl.to(o, { v: to, duration: 1.1, ease: 'power2.out', onUpdate: () => { document.querySelector(sel).textContent = Math.round(o.v).toLocaleString('en-US'); } }, at); };
-      tl.fromTo('#mh', { y: -60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: E }, 76.6);
-      tl.fromTo('#mc1', { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: B }, 77.2); count('#n1', 1290, 77.3);
-      tl.fromTo('#mo1', { scale: 0 }, { scale: 1, duration: 0.3, ease: B }, 78.4);
-      tl.fromTo('#mc2', { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: B }, 78.7); count('#n2', 955, 78.8);
-      tl.fromTo('#mo2', { scale: 0 }, { scale: 1, duration: 0.3, ease: B }, 79.9);
-      tl.fromTo('#mc3', { y: 80, opacity: 0, scale: .8 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: B }, 80.2); count('#n3', 335, 80.3);
-      tl.fromTo('#bar', { opacity: 0, scaleX: 0, transformOrigin: '0 50%' }, { opacity: 1, scaleX: 1, duration: 0.6, ease: E }, 81.6);
-      tl.fromTo('#broom', { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: 1, duration: 0.8, ease: E }, 82.2);
-      tl.fromTo('#bours', { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: 1, duration: 0.6, ease: E }, 82.9);
-      tl.to('#mc3', { keyframes: [{ scale: 1.12 }, { scale: 1 }], duration: 0.5 }, 83.4);
-      tl.fromTo('#msrc', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5 }, 84);
-      tl.fromTo('#mtag', { opacity: 0 }, { opacity: 1, duration: 0.5 }, 84.6);
-
-      // ---- 9 revenue: cards fly up in a stagger
-      tl.fromTo('#rh', { scale: 1.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: E }, 92.2);
-      ['#r1', '#r2', '#r3', '#r4'].forEach((r, i) => tl.fromTo(r, { y: 700, rotate: (i - 1.5) * 6 }, { y: 0, rotate: 0, duration: 0.7, ease: B }, 92.7 + i * 0.3));
-      tl.to(['#r1', '#r2', '#r3', '#r4'], { y: -16, duration: 1.1, ease: 'sine.inOut', yoyo: true, repeat: 5, stagger: 0.18 }, 94.9);
-
-      // ---- 10 OTA: the left side dims and slides, ours slams in, VS spins
-      tl.fromTo('#left', { x: -960 }, { x: 0, duration: 0.5, ease: E }, 101.5);
-      tl.fromTo('#right', { x: 960 }, { x: 0, duration: 0.5, ease: E }, 102.4);
-      tl.fromTo('#vs', { scale: 0, rotate: -180 }, { scale: 1, rotate: 0, duration: 0.6, ease: B }, 102.9);
-      tl.fromTo('#right li', { x: 80, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, ease: E, stagger: 0.28 }, 103.3);
-      tl.to('#left', { opacity: 0.55, filter: 'grayscale(1)', duration: 0.6 }, 104.8);
-      tl.fromTo('#refs', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5 }, 105.4);
-
-      // ---- 11 end
-      tl.fromTo('#logo2', { scale: 0, rotate: -40 }, { scale: 1, rotate: 0, duration: 0.8, ease: 'elastic.out(1, .5)' }, 111.6);
-      tl.fromTo('#rays2', { scale: 0 }, { scale: 1, rotate: 120, duration: 8, ease: 'power1.out' }, 111.6);
-      tl.fromTo('#ttl2', { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: B }, 112.2);
-      tl.fromTo('#sub2', { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: B }, 112.8);
-      tl.fromTo('#url2', { opacity: 0 }, { opacity: 1, duration: 0.5 }, 113.4);
-      tl.to('#end', { opacity: 0, duration: 0.9 }, 118.7);
-
       tl.fromTo('#prog', { scaleX: 0 }, { scaleX: 1, duration: 119.6, ease: 'none' }, 0);
       window.__timelines['main'] = tl;
       tl.seek(0);

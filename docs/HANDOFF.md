@@ -7,7 +7,7 @@ Last updated: 2026-10-24 19:55 +07 by Agent A. Keep this file current: update it
 - Live site: https://nippich321.github.io/suumtrip/ (push to `main` deploys in about a minute; the
   workflow tags css/js/data with `?v=<commit>`; never add version numbers by hand).
 - Submission: Saturday 25 October 2026, 12:00–13:30 +07: the website link and a 2-minute `.mp4`
-  (see `docs/TEAM_KIT.md`). Silent video v3 is on the owner's Desktop (`suumtrip-demo-v3-silent.mp4`); the owner records the voice-over.
+  (see `docs/TEAM_KIT.md`). Silent video v4 is on the owner's Desktop (`suumtrip-demo-v4-silent.mp4`); the owner records the voice-over.
 - Agent B has left (owner, 2026-10-24). Agent A owns every file and does not wait for approval;
   the owner wants replies in Thai, code/commits/AGENTS.md in English, and a short report after
   each push of what changed and what was not tested.
@@ -59,7 +59,10 @@ Last updated: 2026-10-24 19:55 +07 by Agent A. Keep this file current: update it
   zooming", and parts stuttered): the booking is rebuilt at about 2x from the site's own steps with a
   big cursor (`compositions/booking.html`), each step leaving through something on screen; the box
   opening is the real page, recorded at 1/5 speed and sped back up (`SLOW` in `tools/video/shoot.py`),
-  so the WebGL scenes play at a full 30 fps instead of 14-18. HyperFrames skills are installed
+  so the WebGL scenes play at a full 30 fps instead of 14-18. v4: 0:54 to the end rebuilt the same way
+  (`compositions/story.html`); the colour-stripe wipes are left only at 0:12. The dog loading scene is rebuilt from
+  `img/loader/*.svg` (`compositions/dog.html`) and the map is recorded at 1/10 speed (`SLOW = 0.1`), so
+  neither stutters. HyperFrames skills are installed
   (`npx hyperframes skills`). Output on the Desktop, not in git.
 - Revenue streams (owner, 2026-10-24): the box, hotels' empty rooms, **restaurant partners** (a
   restaurant pays a promotion fee and gets more weight in the draw; still must pass the distance and

@@ -33,7 +33,7 @@ CURSOR_JS = """
 # Slow motion: the screencast only gets 15-18 frames a second from a busy WebGL page, so the trip and
 # train scenes run the page at SLOW speed (JS clock, timers and CSS animations) and clips.py speeds
 # the clip back up, giving a smooth 30 fps.
-SLOW = 0.2
+SLOW = 0.1
 WARP_JS = """
 (() => {
   const pn = performance.now.bind(performance);

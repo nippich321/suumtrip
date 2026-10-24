@@ -1,0 +1,229 @@
+<template>
+  <style>
+    @font-face { font-family: 'Mitr'; font-weight: 500; src: url('assets/fonts/mitr-thai-500-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Mitr'; font-weight: 500; src: url('assets/fonts/mitr-latin-500-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Mitr'; font-weight: 600; src: url('assets/fonts/mitr-thai-600-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Mitr'; font-weight: 600; src: url('assets/fonts/mitr-latin-600-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Anuphan'; font-weight: 500; src: url('assets/fonts/anuphan-thai-500-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Anuphan'; font-weight: 500; src: url('assets/fonts/anuphan-latin-500-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Anuphan'; font-weight: 600; src: url('assets/fonts/anuphan-thai-600-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Anuphan'; font-weight: 600; src: url('assets/fonts/anuphan-latin-600-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Anuphan'; font-weight: 700; src: url('assets/fonts/anuphan-thai-700-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Anuphan'; font-weight: 700; src: url('assets/fonts/anuphan-latin-700-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    /* From the train map to the end card (0:54-2:00). Each beat leaves through something on screen:
+       the map shrinks into the first feature card, the ground floods dark for the money, the 335 box
+       grows into the coral revenue world, the cards whip away, the coral half takes the frame for the end. */
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: 'Anuphan', sans-serif; color: #221c33; }
+    #root * { box-sizing: border-box; }
+    .disp { font-family: 'Mitr', sans-serif; font-weight: 600; }
+    .st-ground { position: absolute; inset: 0; background: radial-gradient(circle at 18% 22%, #ffd9cc 0, transparent 46%), radial-gradient(circle at 86% 82%, #ffe6b0 0, transparent 46%), #fff7f0; }
+    .st-h { position: absolute; left: 0; width: 1920px; text-align: center; font-size: 80px; line-height: 1.15; }
+    .st-h span { display: inline-block; }
+    .full { position: absolute; inset: 0; }
+
+    /* map */
+    #st-map { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
+    #st-band { position: absolute; left: 0; right: 0; bottom: 0; height: 520px; background: linear-gradient(transparent, rgba(34, 28, 51, .88)); }
+    #st-k1 { position: absolute; left: 110px; top: 610px; font-size: 150px; color: #fff; line-height: 1; }
+    #st-k2 { position: absolute; left: 116px; top: 790px; font-size: 54px; color: #ffb020; }
+    #st-k3 { position: absolute; left: 116px; top: 880px; display: flex; gap: 14px; align-items: center; background: #fff; border-radius: 999px; padding: 14px 30px; font-size: 34px; font-weight: 700; }
+    #st-k3 i { color: #ff6b4a; font-size: 40px; }
+
+    /* features */
+    .ft { position: absolute; width: 820px; height: 330px; background: #fff; border-radius: 34px; box-shadow: 0 26px 70px rgba(34, 28, 51, .14); }
+    .ft .ic { position: absolute; left: 0; top: 0; width: 330px; height: 330px; border-radius: 34px 0 0 34px; background: #ffe7df; color: #ff6b4a; font-size: 150px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .ft .ic img { width: 330px; height: 330px; object-fit: cover; display: block; }
+    .ft .tx { position: absolute; left: 380px; right: 40px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+    .ft b { font-family: 'Mitr', sans-serif; font-weight: 600; font-size: 52px; line-height: 1.15; }
+    .ft small { font-size: 34px; font-weight: 600; color: #6e6680; }
+    #st-dark { position: absolute; inset: 0; background: #221c33; }
+
+    /* money */
+    .mc { position: absolute; top: 330px; width: 520px; text-align: center; color: #fff; }
+    .mc .lab { font-size: 38px; color: #cbc5d8; font-weight: 600; }
+    .mc .num { font-family: 'Mitr', sans-serif; font-size: 168px; line-height: 1.05; font-variant-numeric: tabular-nums; position: relative; display: inline-block; }
+    #st-m3 .num { padding: 0 24px; }
+    .mc .num em { position: relative; font-style: normal; }
+    #st-hl { position: absolute; inset: 6px 0; border-radius: 26px; background: #ff6b4a; }
+    .op { position: absolute; top: 380px; font-family: 'Mitr', sans-serif; font-size: 150px; color: #8f87a3; }
+    #st-bar { position: absolute; left: 260px; top: 760px; width: 1400px; height: 86px; border-radius: 20px; overflow: hidden; background: #3a3350; }
+    #st-room { position: absolute; left: 0; top: 0; bottom: 0; width: 1036px; background: #8f87a3; color: #fff; font-size: 32px; font-weight: 700; display: flex; align-items: center; padding-left: 30px; }
+    #st-ours { position: absolute; left: 1036px; top: 0; bottom: 0; width: 364px; background: #ff6b4a; color: #fff; font-size: 32px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    #st-src { position: absolute; left: 0; width: 1920px; top: 888px; text-align: center; font-size: 34px; font-weight: 600; color: #cbc5d8; }
+    #st-tag { position: absolute; left: 0; width: 1920px; top: 958px; text-align: center; }
+    #st-tag span { font-size: 30px; font-weight: 700; color: #8a5a00; background: #fff1d1; border-radius: 999px; padding: 8px 26px; }
+    #st-coral { position: absolute; left: 1480px; top: 360px; width: 260px; height: 190px; border-radius: 26px; background: #ff6b4a; }
+
+    /* revenue */
+    .rv { position: absolute; top: 300px; width: 380px; height: 560px; background: #fff; border-radius: 40px; box-shadow: 0 30px 80px rgba(120, 30, 10, .25); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; text-align: center; padding: 40px 30px; }
+    .rv i { font-size: 130px; color: #ff6b4a; }
+    .rv b { font-family: 'Mitr', sans-serif; font-weight: 600; font-size: 48px; line-height: 1.15; }
+    .rv small { font-size: 30px; color: #6e6680; font-weight: 600; line-height: 1.3; }
+    .rv .new { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); background: #221c33; color: #fff; font-size: 26px; font-weight: 700; border-radius: 999px; padding: 6px 22px; white-space: nowrap; }
+
+    /* OTA */
+    .half { position: absolute; top: 0; height: 1080px; width: 960px; display: flex; flex-direction: column; justify-content: center; padding: 0 110px; gap: 26px; }
+    .half h2 { font-family: 'Mitr', sans-serif; font-weight: 600; font-size: 96px; line-height: 1.1; }
+    .half li { list-style: none; font-size: 48px; font-weight: 600; position: relative; display: flex; gap: 18px; align-items: center; }
+    .half li .x { position: absolute; left: -6px; right: -6px; top: 52%; height: 5px; background: #8f87a3; border-radius: 3px; }
+    #st-vs { position: absolute; left: 880px; top: 460px; width: 160px; height: 160px; border-radius: 50%; background: #221c33; color: #fff; font-size: 64px; display: flex; align-items: center; justify-content: center; }
+    #st-refs { position: absolute; left: 0; width: 1920px; top: 966px; text-align: center; font-size: 30px; font-weight: 600; }
+    #st-refs span { background: rgba(255, 255, 255, .92); border-radius: 999px; padding: 10px 28px; }
+
+    /* end */
+    #st-logo { position: absolute; left: 795px; top: 120px; width: 330px; height: 330px; }
+    #st-badge { position: absolute; left: 770px; top: 95px; width: 380px; height: 380px; border-radius: 50%; background: #fff7f0; box-shadow: 0 24px 60px rgba(120, 30, 10, .3); }
+    #st-name { position: absolute; left: 0; width: 1920px; top: 470px; text-align: center; font-size: 170px; color: #fff; line-height: 1.1; }
+    #st-name span { display: inline-block; }
+    #st-slogan { position: absolute; left: 0; width: 1920px; top: 690px; text-align: center; font-size: 72px; color: #221c33; }
+    #st-url { position: absolute; left: 0; width: 1920px; top: 830px; display: flex; justify-content: center; }
+    #st-url span { background: #fff; border-radius: 999px; padding: 16px 40px; font-size: 42px; font-weight: 700; color: #221c33; display: flex; gap: 14px; align-items: center; box-shadow: 0 16px 40px rgba(120, 30, 10, .25); }
+  </style>
+  <div id="root" data-composition-id="story" data-width="1920" data-height="1080">
+    <div class="st-ground"></div>
+
+    <!-- features (under the map, so the map can shrink onto the first card) -->
+    <div class="st-h disp" id="st-fh" style="top:110px">ทริปที่คิดมาแล้วทุกจุด</div>
+    <div class="ft" id="st-f1" style="left:110px;top:250px"><div class="ic"><img src="assets/map-end.jpg" alt="" /></div><div class="tx"><b>ที่เที่ยวอยู่ใกล้กัน</b><small>ไม่วิ่งไปกลับ</small></div></div>
+    <div class="ft" id="st-f2" style="left:990px;top:250px"><div class="ic"><i class="ti ti-luggage"></i></div><div class="tx"><b>ลงสถานี ฝากกระเป๋าก่อน</b><small>ไม่ต้องหิ้วเที่ยว</small></div></div>
+    <div class="ft" id="st-f3" style="left:110px;top:640px"><div class="ic"><i class="ti ti-gas-station"></i></div><div class="tx"><b>ขับรถเองก็ได้</b><small>มีจุดพักและปั๊มตลอดทาง</small></div></div>
+    <div class="ft" id="st-f4" style="left:990px;top:640px"><div class="ic"><i class="ti ti-brand-google-maps"></i></div><div class="tx"><b>นำทางต่อ Google Maps</b><small>กดครั้งเดียว</small></div></div>
+
+    <!-- the train map: the real page, recorded slowed down -->
+    <video id="st-map" class="clip" muted src="assets/train.mp4" data-start="0" data-duration="12.2" data-media-start="0"></video>
+    <div id="st-band"></div>
+    <div class="disp" id="st-k1">รถไฟจริง</div>
+    <div class="disp" id="st-k2">ตามตารางการรถไฟฯ · วิ่งตามรางจริง</div>
+    <div id="st-k3"><i class="ti ti-train"></i> ขบวน 257 · <span id="st-clock">07:45</span> ธนบุรี → นครปฐม</div>
+
+    <!-- money -->
+    <div id="st-dark"></div>
+    <div class="st-h disp" id="st-mh" style="top:110px;color:#fff;font-size:72px">หาเงินจากห้องว่างของโรงแรม</div>
+    <div class="mc" id="st-m1" style="left:80px"><div class="lab">ลูกค้าจ่าย</div><div class="num"><em id="st-n1">0</em></div><div class="lab">บาท / กล่อง 2 คน</div></div>
+    <div class="op" id="st-o1" style="left:625px">−</div>
+    <div class="mc" id="st-m2" style="left:700px"><div class="lab">ค่าห้องเฉลี่ย</div><div class="num" style="color:#cbc5d8"><em id="st-n2">0</em></div><div class="lab">ปกติ 850 · ทองคำ 1,900</div></div>
+    <div class="op" id="st-o2" style="left:1245px">=</div>
+    <div class="mc" id="st-m3" style="left:1330px"><div class="lab">เหลือให้เรา</div><div class="num"><span id="st-hl"></span><em id="st-n3">0</em></div><div class="lab">ราว 26%</div></div>
+    <div id="st-bar"><div id="st-room">ค่าห้อง 74%</div><div id="st-ours">เรา 26%</div></div>
+    <div id="st-src">ถามโรงแรมจริง 5 แห่ง · low season: 1,800 → 1,300 · 2,500 → 1,900 บาท</div>
+    <div id="st-tag"><span>ค่าห้องเฉลี่ยและส่วนที่เหลือเป็นตัวอย่างจากแผนราคา</span></div>
+
+    <!-- revenue: the 335 box grows into this coral world -->
+    <div id="st-coral"></div>
+    <div class="st-h disp" id="st-rh" style="top:110px;color:#fff">รายได้ 4 ทาง</div>
+    <div class="rv" id="st-r1" style="left:110px"><i class="ti ti-gift"></i><b>กล่องสุ่มทริป</b><small>1,290 บาท / 2 คน</small></div>
+    <div class="rv" id="st-r2" style="left:550px"><i class="ti ti-bed"></i><b>ห้องว่าง<br>จากโรงแรม</b><small>ไม่ต้องลดราคา<br>หน้าเว็บตัวเอง</small></div>
+    <div class="rv" id="st-r3" style="left:990px"><span class="new" id="st-new">รายได้ใหม่</span><i class="ti ti-tools-kitchen-2"></i><b>ร้านอาหาร<br>พาร์ทเนอร์</b><small>จ่ายค่าโปรโมต<br>ถูกสุ่มเจอบ่อยขึ้น</small></div>
+    <div class="rv" id="st-r4" style="left:1430px"><i class="ti ti-building-skyscraper"></i><b>บัตรของขวัญ<br>องค์กร</b><small>ขายทีละ<br>หลายสิบใบ</small></div>
+
+    <!-- OTA vs us -->
+    <div class="half" id="st-left" style="left:0;background:#ece8e3;color:#8f87a3">
+      <h2>แอปจองโรงแรม</h2><ul><li>ขายแค่ห้อง<span class="x"></span></li><li>ต้องเลือกเองทุกอย่าง<span class="x"></span></li><li>แข่งกันที่ราคาห้อง<span class="x"></span></li></ul></div>
+    <div class="half" id="st-right" style="left:960px;background:#ff6b4a;color:#fff">
+      <h2>สุ่มทริป</h2><ul><li><i class="ti ti-check"></i> ขายทั้งทริป</li><li><i class="ti ti-check"></i> ตัดสินใจแทน</li><li><i class="ti ti-check"></i> รถไฟจริง แผนรายชั่วโมง</li><li><i class="ti ti-check"></i> พาไปเมืองรอง</li></ul></div>
+    <div class="disp" id="st-vs">VS</div>
+    <div id="st-refs"><span>โมเดลเดียวกับ JAL「どこかにマイル」· JR East「どこかにビューーン!」· Waynabox</span></div>
+
+    <!-- end card -->
+    <div id="st-badge"></div>
+    <img id="st-logo" src="assets/logo-512.png" alt="" />
+    <div class="disp" id="st-name"><span>สุ่</span><span>ม</span><span>ท</span><span>ริ</span><span>ป</span></div>
+    <div class="disp" id="st-slogan">ไม่ต้องคิด แค่ไป</div>
+    <div id="st-url"><span><i class="ti ti-world"></i> nippich321.github.io/suumtrip</span></div>
+  </div>
+  <script>
+    (() => {
+      const $ = (s) => document.querySelector(s);
+      const tl = gsap.timeline({ paused: true });
+      const IN = 'expo.out', SWAY = 'power2.inOut', PUSH = 'power3.in';
+      ['#st-fh', '#st-mh', '#st-rh'].forEach((s) => { const el = $(s); el.innerHTML = el.textContent.split(' ').map((w) => `<span>${w}</span>`).join(' '); });
+      const words = (sel, t) => tl.fromTo(`${sel} span`, { opacity: 0, filter: 'blur(10px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.18, ease: 'power2.out', stagger: 0.08 }, t);
+      const leave = (sels, t, d = 0.2) => tl.to(sels, { opacity: 0, filter: 'blur(10px)', duration: d, ease: 'power2.in' }, t);
+      const count = (sel, to, t, d = 1.3) => { const o = { v: 0 }; tl.to(o, { v: to, duration: d, ease: 'power2.out', onUpdate: () => { $(sel).textContent = Math.round(o.v).toLocaleString('en-US'); } }, t); };
+      gsap.set(['#st-f1', '#st-f2', '#st-f3', '#st-f4', '#st-dark', '#st-m1', '#st-m2', '#st-m3', '#st-o1', '#st-o2', '#st-bar', '#st-src', '#st-tag', '#st-coral',
+        '#st-r1', '#st-r2', '#st-r3', '#st-r4', '#st-left', '#st-right', '#st-vs', '#st-refs', '#st-logo', '#st-badge', '#st-slogan', '#st-url'], { opacity: 0 });
+
+      // ---- map (0-12.5): push in on the train, the words land on a dark band, then the map shrinks onto card 1
+      tl.fromTo('#st-map', { scale: 1 }, { scale: 1.22, duration: 0.9, ease: SWAY }, 0.3);
+      tl.fromTo('#st-band', { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0.9);
+      tl.fromTo('#st-k1', { opacity: 0, filter: 'blur(14px)', x: -40 }, { opacity: 1, filter: 'blur(0px)', x: 0, duration: 0.5, ease: IN }, 1.0);
+      tl.fromTo('#st-k2', { opacity: 0, filter: 'blur(8px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.3 }, 1.5);
+      tl.fromTo('#st-k3', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: IN }, 2.0);
+      // the departure time rolls in like a station board
+      const clock = { v: 0 };
+      tl.fromTo(clock, { v: 0 }, { v: 3, duration: 0.4, ease: 'none', onUpdate: () => { $('#st-clock').textContent = ['07:00', '07:15', '07:30', '07:45'][Math.round(clock.v)]; } }, 2.1);
+      leave(['#st-k1', '#st-k2', '#st-k3', '#st-band'], 6.4, 0.25);
+      tl.to('#st-map', { scale: 1, duration: 0.9, ease: SWAY }, 6.5);
+      // carry across: the map becomes the first feature card's picture
+      tl.fromTo('#st-map', { clipPath: 'inset(0px 0px 0px 0px round 0px)' }, { clipPath: 'inset(0px 420px 0px 420px round 110px)', duration: 0.6, ease: SWAY }, 11.1);
+      tl.to('#st-map', { scale: 0.306, x: -685, y: -125, duration: 0.8, ease: SWAY }, 11.3);
+      tl.fromTo('#st-f1', { opacity: 0 }, { opacity: 1, duration: 0.3 }, 11.8);
+
+      // ---- features (12.5-22.6)
+      words('#st-fh', 12.3);
+      ['#st-f2', '#st-f3', '#st-f4'].forEach((f, i) => {
+        tl.fromTo(f, { opacity: 0, y: 80, filter: 'blur(8px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: IN }, 12.9 + i * 0.5);
+        tl.fromTo(`${f} .ic i`, { scale: 0.4, rotate: -20 }, { scale: 1, rotate: 0, duration: 0.6, ease: IN }, 13.0 + i * 0.5);
+      });
+      // the ground floods dark for the money
+      leave(['#st-fh', '#st-f1', '#st-f2', '#st-f3', '#st-f4'], 22.1, 0.25);
+      tl.fromTo('#st-dark', { opacity: 0 }, { opacity: 1, duration: 0.4, ease: SWAY }, 22.2);
+
+      // ---- money (22.6-38.1): one figure at a time, the earlier ones step back
+      words('#st-mh', 22.7);
+      tl.fromTo('#st-m1', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.6, ease: IN }, 23.3); count('#st-n1', 1290, 23.35);
+      tl.fromTo('#st-o1', { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.4, ease: IN }, 25.0);
+      tl.to('#st-m1', { opacity: 0.55, duration: 0.3 }, 25.2);
+      tl.fromTo('#st-m2', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.6, ease: IN }, 25.3); count('#st-n2', 955, 25.35);
+      tl.fromTo('#st-o2', { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.4, ease: IN }, 27.0);
+      tl.to('#st-m2', { opacity: 0.55, duration: 0.3 }, 27.2);
+      tl.fromTo('#st-m3', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.6, ease: IN }, 27.3); count('#st-n3', 335, 27.35);
+      tl.fromTo('#st-hl', { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: 1, duration: 0.5, ease: SWAY }, 28.8);
+      tl.to(['#st-m1', '#st-m2'], { opacity: 1, duration: 0.4 }, 29.6);
+      tl.fromTo('#st-bar', { opacity: 0, scaleX: 0, transformOrigin: '0 50%' }, { opacity: 1, scaleX: 1, duration: 0.7, ease: IN }, 29.8);
+      tl.fromTo('#st-room', { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: 1, duration: 0.8, ease: IN }, 30.2);
+      tl.fromTo('#st-ours', { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: 1, duration: 0.6, ease: IN }, 30.8);
+      tl.fromTo('#st-src', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: IN }, 31.6);
+      tl.fromTo('#st-tag', { opacity: 0 }, { opacity: 1, duration: 0.4 }, 32.2);
+      // object becomes the world: the coral box behind 335 grows over the frame
+      leave(['#st-mh', '#st-m1', '#st-m2', '#st-o1', '#st-o2', '#st-bar', '#st-src', '#st-tag', '#st-n3', '#st-m3 .lab'], 37.2, 0.25);
+      tl.set('#st-coral', { opacity: 1 }, 37.35);
+      tl.set('#st-hl', { opacity: 0 }, 37.35);
+      tl.to('#st-coral', { scaleX: 13, scaleY: 7, borderRadius: 0, duration: 0.7, ease: PUSH }, 37.4);
+
+      // ---- revenue (38.1-47.5) on coral
+      words('#st-rh', 38.2);
+      ['#st-r1', '#st-r2', '#st-r3', '#st-r4'].forEach((r, i) => tl.fromTo(r, { opacity: 0, y: 160 }, { opacity: 1, y: 0, duration: 0.8, ease: IN }, 38.7 + i * 0.12));
+      // the new one: restaurant partners
+      tl.to(['#st-r1', '#st-r2', '#st-r4'], { opacity: 0.45, scale: 0.96, duration: 0.4, ease: SWAY }, 41.6);
+      tl.to('#st-r3', { scale: 1.08, duration: 0.5, ease: IN }, 41.6);
+      tl.fromTo('#st-new', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: IN }, 41.8);
+      tl.to(['#st-r1', '#st-r2', '#st-r4'], { opacity: 1, scale: 1, duration: 0.4, ease: SWAY }, 44.6);
+      tl.to('#st-r3', { scale: 1, duration: 0.4, ease: SWAY }, 44.6);
+      // whip away
+      tl.to(['#st-rh', '#st-r1', '#st-r2', '#st-r3', '#st-r4'], { x: -1900, filter: 'blur(18px)', duration: 0.35, ease: PUSH, stagger: 0.03 }, 47.0);
+
+      // ---- OTA (47.4-57.6)
+      tl.fromTo('#st-left', { opacity: 1, x: 1920 }, { opacity: 1, x: 0, duration: 0.5, ease: IN }, 47.3);
+      tl.fromTo('#st-right', { opacity: 1, x: 1000 }, { opacity: 1, x: 0, duration: 0.6, ease: IN }, 48.6);
+      tl.fromTo('#st-vs', { opacity: 0, scale: 0.3, rotate: -90 }, { opacity: 1, scale: 1, rotate: 0, duration: 0.5, ease: IN }, 49.0);
+      tl.fromTo('#st-right li', { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.4, ease: IN, stagger: 0.35 }, 49.4);
+      tl.fromTo('#st-left .x', { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: 1, duration: 0.3, ease: 'power2.out', stagger: 0.3 }, 51.2);
+      tl.to('#st-left', { filter: 'grayscale(1)', opacity: 0.7, duration: 0.5 }, 52.2);
+      tl.fromTo('#st-refs', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: IN }, 52.6);
+      // the coral half takes the frame
+      leave(['#st-vs', '#st-refs', '#st-right h2', '#st-right ul'], 56.9, 0.2);
+      tl.to('#st-right', { scaleX: 2, transformOrigin: '100% 50%', duration: 0.6, ease: SWAY }, 57.0);
+      tl.set('#st-left', { opacity: 0 }, 57.6);
+
+      // ---- end card (57.6-65.7) on coral
+      tl.fromTo('#st-badge', { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.6, ease: 'expo.out' }, 57.6);
+      tl.fromTo('#st-logo', { opacity: 1, y: -600, rotate: -18 }, { opacity: 1, y: 0, rotate: 0, duration: 0.8, ease: 'back.out(1.3)' }, 57.7);
+      tl.fromTo('#st-name span', { opacity: 0, y: 40, filter: 'blur(6px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.3, ease: IN, stagger: 0.1 }, 58.4);
+      tl.fromTo('#st-slogan', { opacity: 0, filter: 'blur(10px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.2 }, 59.3);
+      tl.fromTo('#st-url', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: IN }, 59.8);
+
+      window.__timelines['story'] = tl;
+    })();
+  </script>
+</template>

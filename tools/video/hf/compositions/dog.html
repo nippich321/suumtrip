@@ -1,0 +1,66 @@
+<template>
+  <style>
+    @font-face { font-family: 'Mitr'; font-weight: 500; src: url('assets/fonts/mitr-thai-500-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Mitr'; font-weight: 500; src: url('assets/fonts/mitr-latin-500-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Mitr'; font-weight: 600; src: url('assets/fonts/mitr-thai-600-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Mitr'; font-weight: 600; src: url('assets/fonts/mitr-latin-600-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Anuphan'; font-weight: 500; src: url('assets/fonts/anuphan-thai-500-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Anuphan'; font-weight: 500; src: url('assets/fonts/anuphan-latin-500-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Anuphan'; font-weight: 600; src: url('assets/fonts/anuphan-thai-600-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Anuphan'; font-weight: 600; src: url('assets/fonts/anuphan-latin-600-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    @font-face { font-family: 'Anuphan'; font-weight: 700; src: url('assets/fonts/anuphan-thai-700-normal.woff2') format('woff2'); unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+    @font-face { font-family: 'Anuphan'; font-weight: 700; src: url('assets/fonts/anuphan-latin-700-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+    /* The site's loading scene (js/loader.js, css .ld-*), rebuilt from the same SVG art at 1080 px high so it
+       renders at a full 30 fps: the old-town street and clouds scroll, the car drives in, idles and leaves. */
+    #root { position: absolute; inset: 0; overflow: hidden; background: #fbefd9; font-family: 'Anuphan', sans-serif; }
+    #dg-world { position: absolute; inset: 0; }
+    .dg-track { position: absolute; left: 0; top: 0; height: 1080px; width: 10182px; display: flex; }
+    .dg-track img { height: 1080px; width: 5091px; display: block; }
+    #dg-road { position: absolute; left: 0; right: 0; top: 863px; bottom: 0;
+      background: linear-gradient(#b6b2ba 0 4.4%, #fff 4.4% 8.1%, #b6b3be 8.1% 68.1%, #fff 68.1% 71.9%, #b4b1bb 71.9% 77%, #fceac6 77%); }
+    #dg-dash { position: absolute; left: 0; top: 937px; width: 6000px; height: 8px;
+      background: repeating-linear-gradient(90deg, #fff 0 205.7px, transparent 205.7px 411.4px); }
+    #dg-car { position: absolute; left: 560px; top: 509px; width: 799px; height: 487px; }
+    #dg-bounce, #dg-bounce img { position: absolute; left: 0; top: 0; width: 799px; height: 487px; }
+    #dg-head { transform-origin: 53.6% 50.1%; }
+    .dg-wheel { position: absolute; top: 347.5px; width: 127px; height: 127px; }
+    #dg-shadow { position: absolute; left: 48px; right: 32px; top: 443px; height: 58px; background: radial-gradient(closest-side, rgba(60, 45, 70, .32), rgba(60, 45, 70, 0)); }
+    #dg-cap { position: absolute; left: 960px; top: 90px; text-align: center; padding: 18px 40px; border-radius: 30px; background: rgba(255, 255, 255, .88); box-shadow: 0 14px 36px rgba(34, 28, 51, .14); white-space: nowrap; }
+    #dg-cap b { display: block; font-family: 'Mitr', sans-serif; font-weight: 600; font-size: 44px; color: #221c33; }
+    #dg-cap small { display: block; font-size: 30px; font-weight: 600; color: #6e6680; }
+  </style>
+  <div id="root" data-composition-id="dog" data-width="1920" data-height="1080">
+    <div id="dg-world">
+      <div class="dg-track" id="dg-clouds"><img src="assets/clouds.svg" alt="" /><img src="assets/clouds.svg" alt="" /></div>
+      <div class="dg-track" id="dg-scene"><img src="assets/scene-old.svg" alt="" /><img src="assets/scene-old.svg" alt="" /></div>
+      <div id="dg-road"></div><div id="dg-dash"></div>
+    </div>
+    <div id="dg-cap"><b>กำลังพาไปองค์พระปฐมเจดีย์...</b><small>นั่งรถชิล ๆ เดี๋ยวก็ถึง</small></div>
+    <div id="dg-car"><div id="dg-shadow"></div>
+      <div id="dg-bounce"><img src="assets/car-body.svg" alt="" /><img id="dg-head" src="assets/car-head.svg" alt="" /></div>
+      <img class="dg-wheel" id="dg-w1" src="assets/car-wheel.svg" alt="" style="left:119.6px" /><img class="dg-wheel" id="dg-w2" src="assets/car-wheel.svg" alt="" style="left:563.9px" /></div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      const D = 5.6;
+      // the page lands slightly large after the click and settles
+      tl.fromTo('#dg-world', { scale: 1.06 }, { scale: 1, duration: 0.6, ease: 'expo.out' }, 0);
+      // constant scroll, the site's speeds: scene 5091 px per 18 s, clouds per 80 s, dashes 411.4 px per 0.7 s
+      tl.fromTo('#dg-scene', { x: -600 }, { x: -600 - 5091 * D / 18 * 1.6, duration: D, ease: 'none' }, 0);
+      tl.fromTo('#dg-clouds', { x: -200 }, { x: -200 - 5091 * D / 80 * 1.6, duration: D, ease: 'none' }, 0);
+      tl.fromTo('#dg-dash', { x: 0 }, { x: -411.4 * 13, duration: D, ease: 'none' }, 0);
+      // car: drives in, idles (body bounces, the dog nods, wheels turn), revs back and speeds off
+      tl.fromTo('#dg-car', { x: -1500 }, { x: 0, duration: 1.6, ease: 'expo.out' }, 0.15);
+      tl.fromTo('#dg-bounce', { y: 0 }, { y: -6, duration: 0.21, ease: 'sine.inOut', yoyo: true, repeat: 25 }, 0);
+      tl.fromTo('#dg-head', { rotate: -3 }, { rotate: 3, duration: 0.65, ease: 'sine.inOut', yoyo: true, repeat: 8 }, 0);
+      tl.fromTo(['#dg-w1', '#dg-w2'], { rotate: 0 }, { rotate: 720 * D, duration: D, ease: 'none' }, 0);
+      tl.fromTo('#dg-cap', { opacity: 0, xPercent: -50, y: 16 }, { opacity: 1, xPercent: -50, y: 0, duration: 0.5, ease: 'expo.out' }, 0.7);
+      tl.to('#dg-car', { x: -58, rotate: -2.5, duration: 0.25, ease: 'power2.out' }, 4.1);
+      tl.to('#dg-car', { x: 2300, rotate: 0, duration: 0.7, ease: 'power3.in' }, 4.35);
+      tl.to('#dg-cap', { opacity: 0, duration: 0.3 }, 4.5);
+      tl.to('#root', { opacity: 0, duration: 0.4, ease: 'power2.in' }, 5.15);
+      window.__timelines['dog'] = tl;
+    })();
+  </script>
+</template>

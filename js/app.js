@@ -37,53 +37,108 @@ const price = () => (isWeekend(S.date) ? CONFIG.prices.weekend : CONFIG.prices.w
 const peopleText = () => `ผู้ใหญ่ ${S.who.adults}${S.who.kids ? ` · เด็ก ${S.who.kids}` : ''}`;
 const thaiDate = (iso) => new Date(iso).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
 
+// ---------- booking pages ----------
+// One page per step, laid out like a travel booking site: a numbered stepper on top, the
+// step itself on the left, and the booking summary with the price and the button to the
+// next step on the right (on a phone: a bar fixed at the bottom of the screen).
 const WIZ = [
-  { id: 'cat', label: 'แนวทริป', value: () => CATEGORIES[S.cat].label },
-  { id: 'who', label: 'ผู้เดินทาง', value: () => peopleText() },
-  { id: 'choose', label: 'วิธีเดินทาง', value: () => TRANSPORT[S.transport].label },
-  { id: 'date', label: 'วันเดินทาง', value: () => thaiDate(S.date) },
-  { id: 'cands', label: 'ปลายทางที่อาจได้', value: () => (S.veto ? 'ตัดทิ้ง 1 ที่' : '') },
-  { id: 'pay', label: 'ชำระเงิน', value: () => '' },
+  { id: 'cat', label: 'แนวทริป', cta: 'ต่อไป: เลือกวันเดินทาง' },
+  { id: 'date', label: 'วันเดินทาง', cta: 'ต่อไป: วิธีเดินทาง' },
+  { id: 'choose', label: 'การเดินทาง', cta: 'ต่อไป: ผู้เดินทาง' },
+  { id: 'who', label: 'ผู้เดินทาง', cta: 'ต่อไป: ดูปลายทางที่อาจได้' },
+  { id: 'cands', label: 'ปลายทาง', cta: 'ไปชำระเงิน' },
+  { id: 'pay', label: 'ชำระเงิน', cta: 'ชำระแล้ว ไปเปิดกล่อง' },
 ];
+const stepOf = (id) => WIZ.findIndex((w) => w.id === id);
+const returnIso = (iso) => { const d = new Date(`${iso}T12:00:00`); d.setDate(d.getDate() + 1); return localIso(d); };
 
-// The step list on the left; picking something on a page updates only this list and the
-// picked card (no re-render), so the page does not blink.
-function wizList(n) {
-  return WIZ.map((w, i) => {
-    const state = i === n ? 'now' : i <= S.reached ? 'done' : 'todo';
-    const inner = `<span class="wiz-dot">${state === 'done' ? '<i class="ti ti-check"></i>' : ''}</span>
-      <span class="wiz-txt"><span>${w.label}</span>${state === 'done' && w.value() ? `<b>${esc(w.value())}</b>` : ''}</span>`;
-    return state === 'done' ? `<li class="done"><a href="#${w.id}">${inner}</a></li>` : `<li class="${state}" ${state === 'now' ? 'aria-current="step"' : ''}>${inner}</li>`;
+function stepperHtml(n) {
+  const items = WIZ.map((w, i) => {
+    const st = i === n ? 'now' : i <= S.reached ? 'done' : 'todo';
+    const inner = `<span class="bk-dot">${st === 'done' ? '<i class="ti ti-check"></i>' : i + 1}</span><span class="bk-lbl">${w.label}</span>`;
+    return `<li class="${st}">${st === 'done' ? `<a href="#${w.id}">${inner}</a>` : `<span ${st === 'now' ? 'aria-current="step"' : ''}>${inner}</span>`}</li>`;
   }).join('');
+  return `<ol class="bk-steps" aria-label="ขั้นตอนการจอง">${items}</ol>
+    <div class="bk-mstep"><span>ขั้นที่ ${n + 1} จาก ${WIZ.length}</span><b>${WIZ[n].label}</b></div>
+    <div class="bk-progress" aria-hidden="true"><span style="width:${((n + 1) / WIZ.length) * 100}%"></span></div>`;
 }
 
-const refreshSide = (id) => { app.querySelector('.wiz-side ol').innerHTML = wizList(WIZ.findIndex((w) => w.id === id)); };
+// the button to the next step; on the payment step it confirms the (demo) payment
+function ctaHtml(n) {
+  const w = WIZ[n];
+  if (w.id === 'pay') return `<button class="btn btn-primary btn-block bk-cta" data-act="paid"><i class="ti ti-gift"></i> ${w.cta}</button>`;
+  const label = w.id === 'cands' ? `${w.cta} · ${fmt(price())} บาท` : w.cta;
+  return `<a class="btn btn-primary btn-block bk-cta" href="#${WIZ[n + 1].id}">${label} <i class="ti ti-arrow-right"></i></a>`;
+}
 
-// pick one card of a group in place: the chosen one is .on and aria-pressed
+function summaryHtml(n) {
+  const vetoed = S.veto && DATA.destinations.find((d) => d.id === S.veto);
+  const rows = [
+    ['cat', CATEGORIES[S.cat].icon, 'แนวทริป', CATEGORIES[S.cat].label],
+    ['date', 'ti-calendar-event', 'วันเดินทาง', `${thaiDate(S.date)} – ${thaiDate(returnIso(S.date))}`],
+    ['choose', TRANSPORT[S.transport].icon, 'การเดินทาง', TRANSPORT[S.transport].label],
+    ['who', 'ti-users', 'ผู้เดินทาง', peopleText()],
+  ];
+  if (vetoed) rows.push(['cands', 'ti-ban', 'ไม่เอา', vetoed.name]);
+  const people = S.who.adults + S.who.kids;
+  return `
+    <div class="bk-sum">
+      <div class="bk-sum-head"><span class="bk-sum-ic"><i class="ti ti-gift"></i></span>
+        <div><b>กล่องสุ่มทริป${CATEGORIES[S.cat].label}</b><small>2 วัน 1 คืน · รวมที่พัก 1 คืนและแผนเที่ยว</small></div></div>
+      <dl class="bk-rows">${rows.map(([id, icon, k, v]) => `
+        <div class="bk-row"><dt><i class="ti ${icon}"></i> ${k}</dt>
+          <dd>${esc(v)}${stepOf(id) < n ? ` <a href="#${id}" class="bk-edit">แก้ไข</a>` : ''}</dd></div>`).join('')}
+      </dl>
+      <div class="bk-price"><span>ราคากล่อง (2 คน)<small>${isWeekend(S.date) ? 'ราคาวันศุกร์–อาทิตย์' : 'ราคาวันจันทร์–พฤหัสฯ'}</small></span><b>${fmt(price())} บาท</b></div>
+      ${people !== 2 ? `<p class="bk-note"><i class="ti ti-info-circle"></i> ไป ${people} คน ทีมงานจะติดต่อแจ้งราคาก่อนเดินทาง</p>` : ''}
+      ${ctaHtml(n)}
+      <p class="fine">ไม่รวมค่าเดินทางและค่าอาหาร (มีประมาณการให้ในแผน) · ปลายทางเป็นความลับจนเปิดกล่อง</p>
+    </div>`;
+}
+
+function barHtml(n) {
+  return `<div class="bk-bar-price"><small>ราคากล่อง (2 คน)</small><b>${fmt(price())} บาท</b></div>${ctaHtml(n)}`;
+}
+
+// still: the same page drawn again (no entry animation)
+function wizard(id, { title, sub, body }, still = false) {
+  const n = stepOf(id);
+  S.reached = Math.max(S.reached, n);
+  const prev = WIZ[n - 1];
+  return `
+    <section class="screen wide bk ${still ? 'still' : ''}">
+      <nav class="bk-nav" id="bknav">${stepperHtml(n)}</nav>
+      <div class="bk-grid">
+        <div class="bk-main">
+          <a class="bk-back" href="#${prev ? prev.id : 'home'}"><i class="ti ti-arrow-left"></i> ${prev ? prev.label : 'หน้าแรก'}</a>
+          <h2>${title}</h2>
+          ${sub ? `<p class="bk-sub">${sub}</p>` : ''}
+          ${body}
+        </div>
+        <aside class="bk-side" id="bksum">${summaryHtml(n)}</aside>
+      </div>
+      <div class="bk-bar" id="bkbar">${barHtml(n)}</div>
+    </section>`;
+}
+
+// a pick on a page changes the summary, the stepper and the bar, never the whole page
+function refreshSide(id) {
+  const n = stepOf(id);
+  app.querySelector('#bknav').innerHTML = stepperHtml(n);
+  app.querySelector('#bksum').innerHTML = summaryHtml(n);
+  app.querySelector('#bkbar').innerHTML = barHtml(n);
+}
+
+// pick one card of a group in place: the chosen one is .on and aria-checked
 function pickIn(attr, value) {
   app.querySelectorAll(`[${attr}]`).forEach((b) => {
     const on = b.getAttribute(attr) === value;
     b.classList.toggle('on', on);
-    if (b.hasAttribute('aria-pressed')) b.setAttribute('aria-pressed', on);
+    b.setAttribute('aria-checked', on);
   });
 }
 
-// still: the same page drawn again (no entry animation)
-function wizard(id, body, still = false) {
-  const n = WIZ.findIndex((w) => w.id === id);
-  S.reached = Math.max(S.reached, n);
-  return `
-    <section class="screen wide wiz ${still ? 'still' : ''}">
-      <aside class="wiz-side"><div class="wiz-title">กล่องสุ่มทริปของคุณ</div><ol>${wizList(n)}</ol></aside>
-      <div class="wiz-main">${body}</div>
-    </section>`;
-}
-
-// "back" goes to the step before the current page (the one before `to`); the first step has none
-const nextBtn = (to, label = 'ต่อไป') => {
-  const prev = WIZ[WIZ.findIndex((w) => w.id === to) - 2];
-  return `<div class="wiz-next">${prev ? `<a class="btn btn-ghost" href="#${prev.id}">ย้อนกลับ</a>` : ''}<a class="btn btn-primary" href="#${to}">${label}</a></div>`;
-};
+const CHECK_MARK = '<span class="choice-check" aria-hidden="true"><i class="ti ti-check"></i></span>';
 
 function steps(n) {
   return `<div class="steps" aria-label="ขั้นที่ ${n} จาก 5">${[1, 2, 3, 4, 5].map((i) => `<span class="${i <= n ? 'on' : ''}"></span>`).join('')}</div>`;
@@ -140,51 +195,56 @@ const screens = {
     mountGiftBox(app.querySelector('#hero-box'));
   },
 
-  choose() {
-    const art = { pub: ['ti-train', 'ti-bus'], self: ['ti-steering-wheel', 'ti-car'] };
-    const cards = Object.entries(TRANSPORT).map(([k, v]) => `
-      <button class="trcard ${k} ${S.transport === k ? 'on' : ''}" data-tr="${k}" aria-pressed="${S.transport === k}">
-        <span class="trcard-art">${art[k].map((i) => `<i class="ti ${i}"></i>`).join('')}</span>
-        <span class="trcard-body"><span class="t">${v.label}</span><span class="d">${v.note}</span></span>
-      </button>`).join('');
-    app.innerHTML = wizard('choose', `
-      <h2>เดินทางแบบไหนดี?</h2>
-      <p class="muted">ออกจากกรุงเทพฯ ไม่เกิน 4 ชม. ไม่ต้องเลือกจังหวัด เดี๋ยวกล่องเลือกให้</p>
-      <div class="trcards">${cards}</div>
-      <p class="fine" id="trnote" ${S.transport === 'pub' ? '' : 'hidden'}><i class="ti ti-clock"></i> ขาไปและขากลับใช้เวลารถไฟ/รถตู้จากตารางจริง ทีมงานตรวจทุกรอบก่อนแสดงในแผน</p>
-      ${nextBtn('date')}`);
-    app.querySelectorAll('[data-tr]').forEach((b) => (b.onclick = () => {
-      S.transport = b.dataset.tr;
-      pickIn('data-tr', S.transport);
-      app.querySelector('#trnote').hidden = S.transport !== 'pub';
-      refreshSide('choose');
-    }));
-  },
-
   cat() {
-    const catHtml = Object.entries(CATEGORIES).map(([k, v]) => `
-      <button class="opt ${S.cat === k ? 'on' : ''}" data-cat="${k}"><i class="ti ${v.icon}"></i><span class="t">${v.label}</span><span class="d">${v.blurb}</span></button>`).join('');
-    app.innerHTML = wizard('cat', `
-      <h2>อยากได้ทริปแนวไหน?</h2>
-      <p class="muted">เลือกแค่แนว ที่เหลือกล่องจัดให้</p>
-      <div class="opts three">${catHtml}</div>
-      ${nextBtn('who')}`);
+    const count = (k) => DATA.destinations.filter((d) => d.cat === k).length;
+    const cards = Object.entries(CATEGORIES).map(([k, v]) => `
+      <button class="choice choice-pic ${S.cat === k ? 'on' : ''}" role="radio" aria-checked="${S.cat === k}" data-cat="${k}">
+        <span class="choice-img" style="background-image:url('img/loader/scene-${k}.svg')"></span>
+        <span class="choice-body"><b><i class="ti ${v.icon}"></i> ${v.label}</b><small>${v.blurb}</small>
+          <small class="choice-meta">${count(k)} ปลายทางที่อาจได้</small></span>
+        ${CHECK_MARK}
+      </button>`).join('');
+    app.innerHTML = wizard('cat', {
+      title: 'อยากได้ทริปแนวไหน?',
+      sub: 'เลือกแค่แนว ที่เหลือกล่องจัดให้ ปลายทางจะเป็นความลับจนกว่าคุณจะเปิดกล่อง',
+      body: `<div class="choices three" role="radiogroup" aria-label="แนวทริป">${cards}</div>`,
+    });
     app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { S.cat = b.dataset.cat; S.veto = null; pickIn('data-cat', S.cat); refreshSide('cat'); }));
   },
 
   date() {
-    const dayPrice = () => `<span class="small muted">${isWeekend(S.date) ? 'วันหยุด (ศ–อา)' : 'วันธรรมดา (จ–พฤ) ราคาถูกกว่า'}</span><span class="price">${fmt(price())} บาท / 2 คน</span>`;
-    app.innerHTML = wizard('date', `
-      <h2>ไปวันไหนดี?</h2>
-      <p class="muted">เลือกวันไป วันกลับคือวันถัดไป (2 วัน 1 คืน)</p>
-      <div id="date"></div>
-      <div class="opt opt-row" id="dayprice" style="box-shadow:none;background:transparent;padding:0;margin-top:10px">${dayPrice()}</div>
-      ${nextBtn('cands', 'ดูปลายทางที่อาจได้')}`);
+    const range = () => `<span><small>ไป</small><b>${thaiDate(S.date)}</b></span><i class="ti ti-arrow-right"></i>
+      <span><small>กลับ</small><b>${thaiDate(returnIso(S.date))}</b></span><span class="bk-range-tag">2 วัน 1 คืน</span>`;
+    app.innerHTML = wizard('date', {
+      title: 'ไปวันไหนดี?',
+      sub: 'เลือกวันไป วันกลับคือวันถัดไป · วันจันทร์–พฤหัสฯ ราคาถูกกว่า',
+      body: `<div id="date"></div><div class="bk-range" id="range">${range()}</div>`,
+    });
     mountDatePicker(app.querySelector('#date'), {
       value: S.date, min: localIso(new Date()),
       priceFor: (iso) => (isWeekend(iso) ? CONFIG.prices.weekend : CONFIG.prices.weekday),
-      onChange: (iso) => { S.date = iso; app.querySelector('#dayprice').innerHTML = dayPrice(); },
+      onChange: (iso) => { S.date = iso; app.querySelector('#range').innerHTML = range(); refreshSide('date'); },
     });
+  },
+
+  choose() {
+    const facts = {
+      pub: ['รถไฟตามตารางของการรถไฟฯ เลือกรอบเองได้', 'ลงสถานีแล้วไปฝากกระเป๋าที่ที่พักก่อน', 'ในพื้นที่ต่อสองแถวหรือเดิน มีค่าใช้จ่ายประมาณให้'],
+      self: ['แผนขับรถพร้อมจุดพักและปั๊มน้ำมัน', 'เลือกเวลาออกจากบ้านเองได้', 'กดนำทางต่อด้วย Google Maps'],
+    };
+    const cards = Object.entries(TRANSPORT).map(([k, v]) => `
+      <button class="choice choice-row ${S.transport === k ? 'on' : ''}" role="radio" aria-checked="${S.transport === k}" data-tr="${k}">
+        <span class="choice-ic"><i class="ti ${v.icon}"></i></span>
+        <span class="choice-body"><b>${v.label}</b><small>${v.note}</small>
+          <ul class="choice-list">${facts[k].map((f) => `<li><i class="ti ti-check"></i> ${f}</li>`).join('')}</ul></span>
+        ${CHECK_MARK}
+      </button>`).join('');
+    app.innerHTML = wizard('choose', {
+      title: 'เดินทางแบบไหน?',
+      sub: 'ออกจากกรุงเทพฯ ทุกปลายทางไม่เกินราว 4 ชั่วโมง',
+      body: `<div class="choices two" role="radiogroup" aria-label="วิธีเดินทาง">${cards}</div>`,
+    });
+    app.querySelectorAll('[data-tr]').forEach((b) => (b.onclick = () => { S.transport = b.dataset.tr; pickIn('data-tr', S.transport); refreshSide('choose'); }));
   },
 
   who() {
@@ -200,75 +260,66 @@ const screens = {
       <label class="field"><span>${label} <b class="req">*</b></span>
         <input name="${key}" type="${type}" autocomplete="${auto}" placeholder="${ph}" value="${esc(W[key])}" aria-required="true" ${type === 'tel' ? 'inputmode="tel"' : ''}>
         <small class="hint" id="h-${key}" hidden></small></label>`;
-    app.innerHTML = wizard('who', `
-      <h2>ใครไปบ้าง?</h2>
-      <p class="muted">บอกจำนวนคนและช่องทางติดต่อ ทีมงานจะส่งรายละเอียดทริปให้ทางนี้</p>
-      <div class="panel ppl">
-        ${counter('adults', 'ผู้ใหญ่', '12 ปีขึ้นไป', 1)}
-        ${counter('kids', 'เด็ก', 'ต่ำกว่า 12 ปี', 0)}
-        <p class="fine" id="pplnote"></p>
-      </div>
-      <div class="panel">
-        <h3>ข้อมูลผู้ติดต่อ</h3>
-        ${field('name', 'ชื่อ-นามสกุล', 'text', 'name', 'สมชาย ใจดี')}
-        <div class="row2">
-          ${field('phone', 'เบอร์โทรศัพท์', 'tel', 'tel', '0812345678')}
-          ${field('email', 'อีเมล', 'email', 'email', 'you@example.com')}
+    app.innerHTML = wizard('who', {
+      title: 'ใครไปบ้าง?',
+      sub: 'จำนวนผู้เดินทางและช่องทางติดต่อ ทีมงานจะส่งรายละเอียดทริปให้ทางนี้',
+      body: `
+        <div class="bk-card">
+          <h3 class="bk-card-h"><i class="ti ti-users"></i> จำนวนผู้เดินทาง</h3>
+          ${counter('adults', 'ผู้ใหญ่', '12 ปีขึ้นไป', 1)}
+          ${counter('kids', 'เด็ก', 'ต่ำกว่า 12 ปี', 0)}
         </div>
-        <p class="fine"><b class="req">*</b> จำเป็นต้องกรอกเมื่อเปิดขายจริง ตอนนี้เว็บอยู่ระหว่างพัฒนา จึงข้ามไปก่อนได้ · ข้อมูลอยู่ในเบราว์เซอร์นี้เท่านั้น ยังไม่ได้ส่งไปที่ไหน</p>
-      </div>
-      ${nextBtn('choose', 'ต่อไป')}`);
-    const note = () => {
-      const n = W.adults + W.kids;
-      app.querySelector('#pplnote').textContent = n === 2
-        ? `ราคากล่อง ${fmt(price())} บาท สำหรับ 2 คน`
-        : `ราคาบนเว็บคิดสำหรับ 2 คน ไป ${n} คน ทีมงานจะติดต่อแจ้งราคาก่อนเดินทาง`;
-    };
-    note();
+        <div class="bk-card">
+          <h3 class="bk-card-h"><i class="ti ti-address-book"></i> ข้อมูลผู้ติดต่อ</h3>
+          ${field('name', 'ชื่อ-นามสกุล', 'text', 'name', 'สมชาย ใจดี')}
+          <div class="row2">
+            ${field('phone', 'เบอร์โทรศัพท์', 'tel', 'tel', '0812345678')}
+            ${field('email', 'อีเมล', 'email', 'email', 'you@example.com')}
+          </div>
+          <p class="fine"><b class="req">*</b> จำเป็นต้องกรอกเมื่อเปิดขายจริง ตอนนี้เว็บอยู่ระหว่างพัฒนา จึงข้ามไปก่อนได้ · ข้อมูลอยู่ในเบราว์เซอร์นี้เท่านั้น ยังไม่ได้ส่งไปที่ไหน</p>
+        </div>`,
+    });
     app.querySelectorAll('[data-step]').forEach((b) => (b.onclick = () => {
       const [key, d] = b.dataset.step.split(':');
       W[key] = Math.min(10, Math.max(key === 'adults' ? 1 : 0, W[key] + Number(d)));
       app.querySelector(`#n-${key}`).textContent = W[key];
       app.querySelector(`[data-step="${key}:-1"]`).disabled = W[key] <= (key === 'adults' ? 1 : 0);
       app.querySelector(`[data-step="${key}:1"]`).disabled = W[key] >= 10;
-      note();
       refreshSide('who');
     }));
     // checks show a hint but never block "next" while the site is in development
-    const CHECK = {
+    const RULES = {
       name: (v) => (v.trim().length >= 2 ? '' : 'กรอกชื่อ-นามสกุล'),
       phone: (v) => (/^0\d{8,9}$/.test(v.replace(/[\s-]/g, '')) ? '' : 'เบอร์โทร 9-10 หลัก ขึ้นต้นด้วย 0'),
       email: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'รูปแบบอีเมลยังไม่ถูกต้อง'),
     };
     app.querySelectorAll('.field input').forEach((inp) => {
       const hint = app.querySelector(`#h-${inp.name}`);
-      const check = () => { const msg = inp.value ? CHECK[inp.name](inp.value) : 'ยังไม่ได้กรอก (ข้ามได้ระหว่างพัฒนา)'; hint.textContent = msg; hint.hidden = !msg; inp.setAttribute('aria-invalid', !!msg && !!inp.value); };
-      inp.oninput = () => { W[inp.name] = inp.value; if (!hint.hidden) check(); };
-      inp.onblur = check;
+      const test = () => { const msg = inp.value ? RULES[inp.name](inp.value) : 'ยังไม่ได้กรอก (ข้ามได้ระหว่างพัฒนา)'; hint.textContent = msg; hint.hidden = !msg; inp.setAttribute('aria-invalid', !!msg && !!inp.value); };
+      inp.oninput = () => { W[inp.name] = inp.value; if (!hint.hidden) test(); };
+      inp.onblur = test;
     });
   },
 
   cands(still = false) {
     const list = candidates();
-    app.innerHTML = wizard('cands', `
-      <h2>กล่อง${CATEGORIES[S.cat].label}นี้ อาจได้ไป…</h2>
-      <p class="muted">เปิดโอกาสออกให้เห็นทุกที่ ตัดที่ที่ไม่อยากไปทิ้งได้ฟรี 1 ที่</p>
-      ${list.map((d) => `
-        <div class="cand ${d.gold ? 'gold' : ''} ${d.vetoed ? 'vetoed' : ''}">
-          <div class="ic"><i class="ti ${d.gold ? 'ti-crown' : CATEGORIES[d.cat].icon}"></i></div>
-          <div><div class="nm">${esc(d.name)}${d.gold ? '<span class="tag-gold">ทองคำ</span>' : ''}</div>
-            <div class="pv">${esc(d.province)}${d.gold ? ' · ที่พักระดับพรีเมียม' : ''}${S.transport === 'pub' ? rideTag(d.id) : ''}</div></div>
-          <div class="odds">${d.odds}%<small>โอกาสออก</small></div>
-          ${d.gold ? '' : `<button class="veto" data-veto="${d.id}">${d.vetoed ? 'เอาคืน' : 'ตัดทิ้ง'}</button>`}
-        </div>`).join('')}
-      <div class="summary">
-        <div><span>${CATEGORIES[S.cat].label} · ${thaiDate(S.date)} · ${TRANSPORT[S.transport].label} · ${peopleText()}</span></div>
-        <div><span>กล่องสุ่มทริป 2 วัน 1 คืน (2 คน)</span><b>${fmt(price())} บาท</b></div>
-      </div>
-      <button class="btn btn-primary btn-block" id="buy" style="margin-top:16px">ซื้อกล่องนี้ ${fmt(price())} บาท</button>
-      <p class="fine">ราคารวมที่พัก 1 คืน และแผนเที่ยวครบทุกช่วง ไม่รวมค่าเดินทางและค่าอาหาร (มีประมาณการให้ในแผน)</p>`, still);
+    const rows = list.map((d) => `
+      <div class="cand2 ${d.gold ? 'gold' : ''} ${d.vetoed ? 'vetoed' : ''}">
+        <span class="cand2-ic"><i class="ti ${d.gold ? 'ti-crown' : CATEGORIES[d.cat].icon}"></i></span>
+        <div class="cand2-body">
+          <b>${esc(d.name)}${d.gold ? ' <span class="tag-gold">ทองคำ</span>' : ''}</b>
+          <small>${esc(d.province)}${d.gold ? ' · ที่พักระดับพรีเมียม' : ''}${S.transport === 'pub' ? rideTag(d.id) : ''}</small>
+          <span class="odds-bar" aria-hidden="true"><span style="width:${d.odds}%"></span></span>
+        </div>
+        <div class="cand2-odds"><b>${d.odds}%</b><small>โอกาสออก</small></div>
+        ${d.gold ? '<span class="cand2-keep">ตัดไม่ได้</span>' : `<button class="cand2-veto" data-veto="${d.id}" aria-pressed="${d.vetoed}">${d.vetoed ? '<i class="ti ti-arrow-back-up"></i> เอาคืน' : '<i class="ti ti-x"></i> ไม่เอา'}</button>`}
+      </div>`).join('');
+    app.innerHTML = wizard('cands', {
+      title: `กล่อง${CATEGORIES[S.cat].label}นี้ อาจได้ไป…`,
+      sub: 'ทุกที่มีโอกาสออกตามตัวเลข ไม่อยากไปที่ไหน ตัดทิ้งได้ฟรี 1 ที่ แล้วโอกาสจะไปเพิ่มให้ที่อื่น',
+      body: `<div class="cands2">${rows}</div>`,
+    }, still);
     app.querySelectorAll('[data-veto]').forEach((b) => (b.onclick = () => { S.veto = S.veto === b.dataset.veto ? null : b.dataset.veto; screens.cands(true); }));
-    app.querySelector('#buy').onclick = () => go('pay');
   },
 
   pay() {
@@ -276,23 +327,21 @@ const screens = {
     const qr = window.qrcode(0, 'M');
     qr.addData(payload);
     qr.make();
-    app.innerHTML = wizard('pay', `
-      <div class="paybox">
-        <span class="pp">PromptPay</span>
-        <div class="qr">${qr.createSvgTag({ cellSize: 5, margin: 2, scalable: true })}</div>
-        <p class="amount">${fmt(price())} บาท</p>
-        <p class="small muted">สแกนจ่ายด้วยแอปธนาคารใดก็ได้</p>
-        <div class="summary">
-          <div><span>กล่อง${CATEGORIES[S.cat].label}</span><span>${thaiDate(S.date)}</span></div>
-          <div><span>การเดินทาง</span><span>${TRANSPORT[S.transport].label}</span></div>
-          <div><span>ผู้เดินทาง</span><span>${peopleText()}</span></div>
-          ${S.who.name.trim() ? `<div><span>ผู้ติดต่อ</span><span>${esc(S.who.name.trim())}</span></div>` : ''}
-          ${S.veto ? `<div><span>ตัดทิ้ง</span><span>${esc(DATA.destinations.find((d) => d.id === S.veto).name)}</span></div>` : ''}
+    app.innerHTML = wizard('pay', {
+      title: 'ชำระเงิน',
+      sub: 'สแกนพร้อมเพย์ด้วยแอปธนาคารใดก็ได้',
+      body: `
+        <div class="bk-card pay2">
+          <div class="pay2-qr"><span class="pp">PromptPay</span>${qr.createSvgTag({ cellSize: 5, margin: 2, scalable: true })}
+            <b class="pay2-amt">${fmt(price())} บาท</b></div>
+          <ol class="pay2-steps">
+            <li>เปิดแอปธนาคารแล้วเลือกสแกนจ่าย</li>
+            <li>สแกน QR นี้ ยอด <b>${fmt(price())} บาท</b></li>
+            <li>จ่ายเสร็จแล้วกด "ชำระแล้ว ไปเปิดกล่อง"</li>
+          </ol>
         </div>
-      </div>
-      <button class="btn btn-primary btn-block" id="paid" style="margin-top:16px">ชำระแล้ว ไปเปิดกล่อง</button>
-      <p class="fine">เวอร์ชันสาธิต: QR นี้สร้างตามมาตรฐานพร้อมเพย์จริง แต่ยังไม่ได้ตั้งเลขบัญชีรับเงิน กดปุ่มด้านบนเพื่อไปต่อได้เลย</p>`);
-    app.querySelector('#paid').onclick = () => { S.paid = true; S.dest = null; S.trip = null; S.driveState = null; S.pick = null; go('open'); };
+        <p class="bk-demo"><i class="ti ti-flask"></i> เวอร์ชันสาธิต: QR สร้างตามมาตรฐานพร้อมเพย์จริง แต่ยังไม่ได้ตั้งบัญชีรับเงิน กดปุ่มชำระแล้วไปต่อได้เลย</p>`,
+    });
   },
 
   open() {
@@ -663,6 +712,13 @@ function route() {
   (screens[name] || screens.home)();
   window.scrollTo(0, 0);
 }
+
+// "ชำระแล้ว ไปเปิดกล่อง" sits in the summary card and in the phone's bottom bar
+app.addEventListener('click', (e) => {
+  if (!e.target.closest('[data-act="paid"]')) return;
+  S.paid = true; S.dest = null; S.trip = null; S.driveState = null; S.pick = null;
+  go('open');
+});
 
 async function init() {
   // the full intro plays once per tab; later reloads just show a short text

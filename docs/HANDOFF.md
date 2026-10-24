@@ -1,13 +1,13 @@
 # Handoff — Suumtrip (read this first if you pick up the work)
 
-Last updated: 2026-10-24 18:40 +07 by Agent A. Keep this file current: update it with every push.
+Last updated: 2026-10-24 19:17 +07 by Agent A. Keep this file current: update it with every push.
 
 ## Where things stand
 
 - Live site: https://nippich321.github.io/suumtrip/ (push to `main` deploys in about a minute; the
   workflow tags css/js/data with `?v=<commit>`; never add version numbers by hand).
 - Submission: Saturday 25 October 2026, 12:00–13:30 +07: the website link and a 2-minute `.mp4`
-  (see `docs/TEAM_KIT.md`). The video is **not started**.
+  (see `docs/TEAM_KIT.md`). Silent video v2 is on the owner's Desktop; the owner records the voice-over.
 - Agent B has left (owner, 2026-10-24). Agent A owns every file and does not wait for approval;
   the owner wants replies in Thai, code/commits/AGENTS.md in English, and a short report after
   each push of what changed and what was not tested.
@@ -54,9 +54,15 @@ Last updated: 2026-10-24 18:40 +07 by Agent A. Keep this file current: update it
   coral gift box (#FF6B4A) with a gold bow (#FFB020), lid slightly open with a map pin popping out,
   white background, no text.
 
-- Video: script `docs/VIDEO_SCRIPT.md`; silent 2-minute cut made with HyperFrames (tools in
-  `tools/video/`, see its README; output `video/suumtrip-demo-silent.mp4`, not in git). The owner records
-  the voice-over; the cut follows the script's timing. Recording (2 minutes; answer "how do you beat OTAs?": we sell the whole
+- Video: script `docs/VIDEO_SCRIPT.md` (draft 2 follows the v2 cut second by second); silent 2-minute
+  motion-graphics cut made with HyperFrames (`tools/video/hf/index.html`: kinetic text, site footage in a
+  zooming browser window, colour-stripe wipes between scenes, counters, confetti). Output
+  `Desktop/suumtrip-demo-v2-silent.mp4` (not in git; v1 plain cut is `suumtrip-demo-silent.mp4`). The
+  owner records the voice-over.
+- Revenue streams (owner, 2026-10-24): the box, hotels' empty rooms, **restaurant partners** (a
+  restaurant pays a promotion fee and gets more weight in the draw; still must pass the distance and
+  opening-hours rules, and should be labelled "ร้านพาร์ทเนอร์"), corporate gift cards. Restaurant
+  partners are in the video only; the site does not weight restaurants yet and no fee is set. Recording (2 minutes; answer "how do you beat OTAs?": we sell the whole
   trip and the decision, not a cheaper room; mystery-trip precedents: Waynabox, JAL
   どこかにマイル, JR East どこかにビューーン!).
 - Van/bus times (Bang Saen, Amphawa, Nakhon Nayok, Suan Phueng) need a person's tick in

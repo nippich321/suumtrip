@@ -5,6 +5,6 @@
    `python tools/video/shoot.py <shots_dir>` (scenes: chat home booking trip train money gift ota end;
    the slides are `tools/video/slides.html`).
 3. Turn each scene's frames into a 30 fps clip (see the commands in docs/HANDOFF.md) and copy them to
-   `tools/video/hf/assets/<scene>.mp4`.
-4. Compose and render with HyperFrames: `cd tools/video/hf && npx hyperframes@0.8.192 render -o ../../../video/suumtrip-demo-silent.mp4`.
-   Timing, cross-fades and captions are in `tools/video/hf/index.html`; the script is docs/VIDEO_SCRIPT.md.
+   `tools/video/hf/assets/<scene>.mp4`; also copy `img/logo/logo-512.png` there.
+4. Compose and render with HyperFrames: `cd tools/video/hf && npx hyperframes@0.8.192 render -o ../../../video/suumtrip-demo-v2-silent.mp4`.
+   Timing, wipes and animations are in `tools/video/hf/index.html` (v2 motion cut; footage videos must be top-level or inside untimed wrappers, never inside a timed section); the script is docs/VIDEO_SCRIPT.md.

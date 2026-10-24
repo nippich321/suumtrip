@@ -106,6 +106,33 @@ function pickTrainFirst(runs, want, before, lead) {
 
 const HOTEL_MIN = 20;
 
+// One place per slot so that each day runs along, not back and forth: every combination of the
+// slots' options (at most a few hundred) is scored by the road metres the trip drives, from the
+// town to the hotel, round the day's stops, back to the hotel, and on day 2 to the hotel and the
+// station; then one of the shortest (within 12 %) is picked at random, so "สุ่มใหม่" still varies.
+// keep: places already chosen (the same trip re-planned).
+function planPlaces(dest, keep) {
+  const slots = dest.slots.map((s) => ({ id: s.id, day: s.day, options: keep?.[s.id] ? [keep[s.id]] : s.options }));
+  const hotelSlot = slots.find((s) => s.id === 'hotel');
+  const meters = (a, b) => (a === b ? 0 : dest.legs[`${a}>${b}`]?.m ?? 50000);
+  const combos = [];
+  const walk = (i, picked) => {
+    if (i === slots.length) {
+      const hotel = picked.hotel ?? hotelSlot?.options[0];
+      const day1 = ['ARRIVE', ...slots.filter((s) => s.day === 1).map((s) => picked[s.id]), hotel];
+      const day2 = [hotel, ...slots.filter((s) => s.day === 2).map((s) => picked[s.id]), hotel, 'ARRIVE'];
+      let m = 0;
+      for (const day of [day1, day2]) for (let k = 1; k < day.length; k++) m += meters(day[k - 1], day[k]);
+      combos.push({ picked: { ...picked }, m });
+      return;
+    }
+    for (const o of slots[i].options) { picked[slots[i].id] = o; walk(i + 1, picked); }
+  };
+  walk(0, {});
+  const best = Math.min(...combos.map((c) => c.m));
+  return pick(combos.filter((c) => c.m <= best * 1.12 + 500)).picked;
+}
+
 export const runKey = (r) => `${r.row.operator}|${r.dep}`;
 
 // The track between two stations ("from-to" codes); data/rails.json keeps each pair once,
@@ -145,7 +172,7 @@ export function buildTrip(dest, opts) {
   // customer chose (runKey), otherwise the trip picks its own
   const { transport, date, schedule, transfer, drive, rails, pick: chosenRuns } = opts;
   const chosen = {};
-  for (const s of dest.slots) chosen[s.id] = opts.chosen?.[s.id] ?? pick(s.options);
+  Object.assign(chosen, planPlaces(dest, opts.chosen));
   const day1 = new Date(date);
   const day2 = new Date(day1.getTime() + 86400000);
   const sun1 = sunTimes(day1, dest.center[1], dest.center[0]);

@@ -1,6 +1,6 @@
 # Handoff — Suumtrip (read this first if you pick up the work)
 
-Last updated: 2026-10-24 16:00 +07 by Agent A. Keep this file current: update it with every push.
+Last updated: 2026-10-24 16:15 +07 by Agent A. Keep this file current: update it with every push.
 
 ## Where things stand
 
@@ -36,7 +36,9 @@ Last updated: 2026-10-24 16:00 +07 by Agent A. Keep this file current: update it
    trains drawn on the railway (`data/rails.json`, `tools/build_rails.py`); the "รถไป-กลับ"
    panel (`js/rides.js`) lets the customer pick runs, with fares only when the railway states
    them, and "ซื้อตั๋ว" → https://dticket.railway.co.th/.
-5. Every trip goes from the station straight to the hotel to leave the bags; by public
+5. Places are picked per day by the shortest total road distance (`planPlaces` in
+   `js/itinerary.js`: every combination of the slots' options, then a random one within 12 % of the
+   best), so a day does not run back and forth. Every trip goes from the station straight to the hotel to leave the bags; by public
    transport day 2 ends with collecting the bags just before the run home.
 6. Self-drive: `js/drive.js` planner (departure time, TomTom traffic if `CONFIG.tomtomKey` is set
    — it is empty, so estimates labelled ประมาณการ; rest stops and fuel pins from

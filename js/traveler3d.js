@@ -13,7 +13,8 @@ const VEHICLES = {
   grab: { file: 'assets/3d/cars/hatchback-sports.glb', length: 4.2 },
   songthaew: { file: 'assets/3d/cars/truck.glb', length: 4.6 },
   van: { file: 'assets/3d/cars/van.glb', length: 4.9 },
-  // The coach (รถทัวร์, tools/build_bus.py) waits for the owner's approval; a bus leg shows the van.
+  // coach (รถทัวร์): the Kenney van stretched in Blender, three axles (tools/build_bus.py)
+  bus: { file: 'assets/3d/cars/bus.glb', length: 9 },
   // Kenney Train Kit: an orange diesel with two orange/cream carriages, close to the
   // State Railway's look. The bogies are not wheels, so they do not spin.
   train: { file: 'assets/3d/trains/train-diesel-a.glb', length: 4.3, spin: false, exhaust: [0, 2.9, 0.3],
@@ -100,6 +101,7 @@ function fallbackEntries() {
     grab: makeEntry('vehicle', boxCar(0x00b14f, 0x00964a), { length: 4, width: 1.8 }),
     songthaew: makeEntry('vehicle', boxCar(0x2e6bd6, 0xe8e8e8, 4.4), { length: 4.4, width: 1.9 }),
     van: makeEntry('vehicle', boxCar(0xf4f4f4, 0x37474f, 5), { length: 5, width: 2 }),
+    bus: makeEntry('vehicle', boxCar(0x6f8fd8, 0xdfe6f2, 9), { length: 9, width: 2.2 }),
     train: makeEntry('vehicle', boxCar(0xffa53a, 0x5d6178, 4.3), { length: 4.3, width: 2.1 }),
   };
 }
@@ -484,7 +486,7 @@ export function createTravelerLayer(maplibregl) {
       const now = clock();
       const wasVisible = state.visible;
       Object.assign(state, next);
-      if (!entries[state.vehicle]) state.vehicle = 'van'; // e.g. a coach, until it has a model
+      if (!entries[state.vehicle]) state.vehicle = 'van'; // a kind without a model
       if (!state.visible) {
         shown = null;
         leaving = null;

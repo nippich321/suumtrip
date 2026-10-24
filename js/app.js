@@ -5,6 +5,7 @@ import { createTripMap } from './tripmap.js';
 import { showLoader } from './loader.js';
 import { mountDatePicker } from './datepicker.js';
 import { mountDrivePlanner, restIcon } from './drive.js';
+import { mountRides } from './rides.js';
 
 const app = document.getElementById('app');
 const S = { cat: 'nat', transport: 'pub', date: nextWeekday(), veto: null, dest: null, trip: null, paid: false, reached: 0,
@@ -12,6 +13,8 @@ const S = { cat: 'nat', transport: 'pub', date: nextWeekday(), veto: null, dest:
   who: { adults: 2, kids: 0, name: '', phone: '', email: '' } };
 let DATA = null;
 let SCHED = null; // confirmed bus/van/train times (data/schedules.json)
+let RAILS = null; // railway track between stations (data/rails.json), so trains run on rails on the map
+let rides = null;
 let tripMap = null;
 let planner = null;
 let ROADSIDE = null; // rest stops along each drive (data/roadside.json), loaded on the first self-drive trip
@@ -28,7 +31,6 @@ function nextWeekday() {
 function localIso(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-const rackFor = (d) => Math.round(d.rack * (isWeekend(S.date) ? 1.3 : 1) / 10) * 10;
 const isWeekend = (iso) => { const g = new Date(iso).getDay(); return g === 0 || g === 5 || g === 6; };
 const price = () => (isWeekend(S.date) ? CONFIG.prices.weekend : CONFIG.prices.weekday);
 const peopleText = () => `ผู้ใหญ่ ${S.who.adults}${S.who.kids ? ` · เด็ก ${S.who.kids}` : ''}`;
@@ -119,7 +121,7 @@ const screens = {
     <section class="screen hero">
       ${boxHtml('hero-box')}
       <h1>เลือกแค่แนว<br><span>ที่เหลือกล่องจัดให้</span></h1>
-      <p>กล่องสุ่มทริป 2 วัน 1 คืน ตั้งแต่ออกจากบ้าน ที่พัก ร้านอาหาร ที่เที่ยว จนกลับถึงบ้าน ในราคาที่ถูกกว่าจองเอง</p>
+      <p>ไม่ต้องหาที่เที่ยว ไม่ต้องเถียงกันว่าไปไหน กล่องสุ่มทริป 2 วัน 1 คืนจัดให้ครบ ตั้งแต่ขึ้นรถไฟ ที่พัก ร้านอาหาร ที่เที่ยว จนกลับถึงบ้าน</p>
       <a class="btn btn-primary" href="#cat"><i class="ti ti-gift"></i> สุ่มทริปของฉัน · เริ่ม ${fmt(CONFIG.prices.weekday)} บาท</a>
       <div class="how">
         <div><i class="ti ti-adjustments-horizontal"></i>เลือกแนว<br>วัน และการเดินทาง</div>
@@ -127,10 +129,10 @@ const screens = {
         <div><i class="ti ti-map-2"></i>ได้แผนครบ<br>ทุกชั่วโมง</div>
       </div>
       <div class="proof" style="text-align:left">
-        <b>ทำไมถูกกว่า?</b> ที่พักปล่อยห้องว่างให้เราในราคาลับ เพราะห้องว่างคืนนี้ขายพรุ่งนี้ไม่ได้ คุณได้ราคาดี ที่พักได้ลูกค้า โดยไม่ต้องลดราคาหน้าเว็บ
+        <b>ต่างจากจองโรงแรมเองยังไง?</b> เว็บจองโรงแรมขายห้องพัก แต่คุณยังต้องคิดเองว่าจะไปไหน เที่ยวอะไร นั่งรถรอบไหน กล่องของเราขายทั้งทริป: เลือกปลายทางให้ จัดแผนรายชั่วโมงพร้อมรอบรถไฟจริง พาไปร้านท้องถิ่นในเมืองรอง ส่วนที่พักพาร์ตเนอร์ได้ลูกค้าจากห้องที่ยังว่าง
         <ul class="small muted">
-          <li>โมเดลเดียวกับ Waynabox (สเปน) ที่พาคนเที่ยวมาแล้วกว่า 200,000 คน</li>
-          <li>JAL และ JR West ในญี่ปุ่นใช้การสุ่มปลายทางดึงคนไปเที่ยวเมืองรอง</li>
+          <li>Waynabox ในสเปนขายทริปสุ่มปลายทางแบบนี้มาหลายปี</li>
+          <li>ในญี่ปุ่น JAL ("どこかにマイル") และ JR East ("どこかにビューーン!") ใช้การสุ่มปลายทางพาคนไปเที่ยวเมืองรอง</li>
         </ul>
       </div>
     </section>`;
@@ -288,7 +290,7 @@ const screens = {
       </div>
       <button class="btn btn-primary btn-block" id="paid" style="margin-top:16px">ชำระแล้ว ไปเปิดกล่อง</button>
       <p class="fine">เวอร์ชันสาธิต: QR นี้สร้างตามมาตรฐานพร้อมเพย์จริง แต่ยังไม่ได้ตั้งเลขบัญชีรับเงิน กดปุ่มด้านบนเพื่อไปต่อได้เลย</p>`);
-    app.querySelector('#paid').onclick = () => { S.paid = true; S.dest = null; S.trip = null; S.driveState = null; go('open'); };
+    app.querySelector('#paid').onclick = () => { S.paid = true; S.dest = null; S.trip = null; S.driveState = null; S.pick = null; go('open'); };
   },
 
   open() {
@@ -313,7 +315,7 @@ const screens = {
       setTimeout(() => {
         clearInterval(iv);
         S.dest = drawDestination();
-        S.trip = buildTrip(S.dest, { transport: S.transport, date: S.date, schedule: SCHED?.confirmed?.[S.dest.id], transfer: SCHED?.transfers?.[S.dest.id] });
+        S.trip = buildTrip(S.dest, tripOpts());
         cube.classList.remove('shake');
         cube.classList.add('open');
         rl.textContent = '';
@@ -346,7 +348,7 @@ const screens = {
           <div class="tl-head"><div><h3 style="margin:0">ทริปของคุณ</h3><span class="small muted">${thaiDate(t.date)} · ${TRANSPORT[t.transport].label}</span></div>
             <a class="btn btn-ghost" href="#choose" style="padding:8px 14px;font-size:14px"><i class="ti ti-refresh"></i> สุ่มใหม่</a></div>
           <div class="trip-chips" id="chips">${chipsHtml(t)}</div>
-          ${t.transport === 'self' ? '<div id="drive"></div>' : ''}
+          ${t.transport === 'self' ? '<div id="drive"></div>' : '<div id="rides"></div>'}
           <div id="tl">${timelineHtml(t)}</div>
           <div class="verify"><i class="ti ti-info-circle"></i> สถานที่ทั้งหมดดึงจากข้อมูลจริงของ OpenStreetMap ส่วนเวลาเดินทางคำนวณจากถนนจริง เวลาเปิดร้านและรอบรถยังต้องเช็กก่อนเดินทาง</div>
         </div>
@@ -364,12 +366,36 @@ const screens = {
     bindTimeline();
     planner?.destroy();
     planner = null;
+    rides = null;
     if (t.transport === 'self') mountPlanner(t);
+    else {
+      // the customer picks the train/van each way; the same trip is re-planned around it
+      rides = mountRides(app.querySelector('#rides'), {
+        trip: t,
+        onPick: (dir, key) => { S.pick = { ...S.pick, [dir]: key }; S.trip = buildTrip(S.dest, tripOpts({ chosen: S.trip.chosen })); refreshTrip(); },
+      });
+    }
   },
 
   partner() { renderPartner(); },
   gift() { renderGift(); },
 };
+
+// everything buildTrip needs for the current booking
+function tripOpts(extra = {}) {
+  return { transport: S.transport, date: S.date, schedule: SCHED?.confirmed?.[S.dest.id], transfer: SCHED?.transfers?.[S.dest.id],
+    rails: RAILS, pick: S.pick, ...extra };
+}
+
+// the trip was re-planned (another run, drive or rest stop): redraw what depends on it
+function refreshTrip() {
+  app.querySelector('#chips').innerHTML = chipsHtml(S.trip);
+  app.querySelector('#tl').innerHTML = timelineHtml(S.trip);
+  bindTimeline();
+  tripMap?.setTrip(S.trip);
+  planner?.update(S.trip);
+  rides?.update(S.trip);
+}
 
 function chipsHtml(t) {
   const startLeg = t.items.find((i) => i.type === 'leg' && i.isLong);
@@ -396,12 +422,8 @@ async function mountPlanner(t) {
     roadside: ROADSIDE.destinations[t.dest.id],
     state: S.driveState,
     onPlan: (drive) => {
-      S.trip = buildTrip(S.dest, { transport: S.transport, date: S.date, chosen: S.trip.chosen, drive });
-      app.querySelector('#chips').innerHTML = chipsHtml(S.trip);
-      app.querySelector('#tl').innerHTML = timelineHtml(S.trip);
-      bindTimeline();
-      tripMap?.setTrip(S.trip);
-      planner?.update(S.trip);
+      S.trip = buildTrip(S.dest, tripOpts({ chosen: S.trip.chosen, drive }));
+      refreshTrip();
     },
   });
   S.driveState = planner.state;
@@ -468,13 +490,12 @@ function timelineHtml(t) {
 
 function showReveal() {
   const d = S.dest;
-  const save = rackFor(d) - price();
   app.querySelector('#reveal').innerHTML = `
     <div class="reveal ${d.gold ? 'gold' : ''}">
       <div class="kicker">${d.gold ? '<i class="ti ti-crown"></i> ได้ปลายทางทองคำ!' : 'คุณได้ไป…'}</div>
       <h2>${esc(d.name)}</h2>
       <div class="muted">${esc(d.province)} · พักที่ ${esc(S.trip.hotel.name)}</div>
-      <div class="price-cmp"><span>ราคาปกติประมาณ <s>${fmt(rackFor(d))}</s></span><b>คุณจ่าย ${fmt(price())}</b>${save > 0 ? `<span class="save">คุ้มขึ้น ${fmt(save)} บาท</span>` : ''}</div>
+      <div class="price-cmp"><b>คุณจ่าย ${fmt(price())} บาท / 2 คน</b><span>รวมที่พัก 1 คืน และแผนเที่ยวทั้งทริป</span></div>
       <a class="btn btn-primary btn-block" href="#trip" style="margin-top:16px"><i class="ti ti-map-2"></i> ดูแผนเที่ยวทั้งทริป</a>
     </div>`;
 }
@@ -619,7 +640,7 @@ function renderGift() {
 function go(name) { location.hash = name; }
 function route() {
   const name = location.hash.slice(1) || 'home';
-  if (name !== 'trip') { tripMap?.destroy(); tripMap = null; planner?.destroy(); planner = null; }
+  if (name !== 'trip') { tripMap?.destroy(); tripMap = null; planner?.destroy(); planner = null; rides = null; }
   (screens[name] || screens.home)();
   window.scrollTo(0, 0);
 }
@@ -639,6 +660,7 @@ async function init() {
   }
   // timetables are optional: without them trips show estimated times marked "waiting for a check"
   try { SCHED = await (await fetch('data/schedules.json')).json(); } catch { SCHED = null; }
+  try { RAILS = await (await fetch('data/rails.json')).json(); } catch { RAILS = null; }
   const cats = new Set(DATA.destinations.map((d) => d.cat));
   if (!cats.has(S.cat)) S.cat = [...cats][0];
   window.addEventListener('hashchange', route);

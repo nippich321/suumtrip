@@ -104,7 +104,30 @@ function pickTrainFirst(runs, want, before, lead) {
   return train;
 }
 
-const HOTEL_MIN = 20; // leave the bags (or check in) at the hotel on arrival
+const HOTEL_MIN = 20;
+
+export const runKey = (r) => `${r.row.operator}|${r.dep}`;
+
+// The track between two stations ("from-to" codes); data/rails.json keeps each pair once,
+// under the codes in ascending order.
+function railLine(rails, stations) {
+  if (!rails || !stations) return null;
+  const [a, b] = stations.split('-');
+  const line = rails[[a, b].sort().join('-')];
+  if (!line) return null;
+  return a < b ? line : [...line].reverse();
+}
+
+function lineMeters(coords) {
+  const p = Math.PI / 180;
+  let m = 0;
+  for (let i = 1; i < coords.length; i++) {
+    const [a, b] = [coords[i - 1], coords[i]];
+    const h = Math.sin((b[1] - a[1]) * p / 2) ** 2 + Math.cos(a[1] * p) * Math.cos(b[1] * p) * Math.sin((b[0] - a[0]) * p / 2) ** 2;
+    m += 12742000 * Math.asin(Math.sqrt(h));
+  }
+  return m;
+} // leave the bags (or check in) at the hotel on arrival
 
 function pickFrom(runs, want, before, lead) {
   const goal = (r) => (before ? want - lead(r) : want);
@@ -118,7 +141,9 @@ export function buildTrip(dest, opts) {
   // transfer: the road legs between a far-away train station and the destination
   // chosen: keep these places (re-planning the same trip); drive: the self-drive plan from
   // js/drive.js ({ depart, out, back }, each cut into timed pieces at the rest stops)
-  const { transport, date, schedule, transfer, drive } = opts;
+  // rails: track lines between stations (data/rails.json); pick: { out, back } run keys the
+  // customer chose (runKey), otherwise the trip picks its own
+  const { transport, date, schedule, transfer, drive, rails, pick: chosenRuns } = opts;
   const chosen = {};
   for (const s of dest.slots) chosen[s.id] = opts.chosen?.[s.id] ?? pick(s.options);
   const day1 = new Date(date);
@@ -136,9 +161,12 @@ export function buildTrip(dest, opts) {
     const vehicle = VEHICLE[run?.row.mode] && isLong ? run.row.mode : legVehicle(leg, transport, isLong);
     const slow = isLong && transport !== 'self' ? 1.3 : vehicle === 'walk' ? 1 : 1.15;
     const sec = run?.dur != null ? run.dur * 60 : leg.exact ? leg.sec : leg.sec * slow + (isLong && transport !== 'self' ? 20 * 60 : 0);
-    const geom = reverse ? [...leg.geom].reverse() : leg.geom;
+    // a train runs on its track (between the stations), not along the road
+    const track = isLong && run?.row.mode === 'train' ? railLine(rails, run.row.stations) : null;
+    const geom = track || (reverse ? [...leg.geom].reverse() : leg.geom);
+    const m = track ? Math.round(lineMeters(track)) : leg.m;
     const mode = (run && MODE[run.row.mode]) || tag;
-    items.push({ type: 'leg', from, to, vehicle, sec, m: leg.m, cost: legCost(vehicle, leg.m),
+    items.push({ type: 'leg', from, to, vehicle, sec, m, cost: legCost(vehicle, m),
       geom, start, end: start + sec / 60, isLong, label: mode?.label, icon: mode?.icon });
     return start + sec / 60;
   };
@@ -189,7 +217,8 @@ export function buildTrip(dest, opts) {
   // none in time: the one that gets there first
   const soonest = outRuns.length ? outRuns.reduce((a, b) => (b.dep + lead(b) < a.dep + lead(a) ? b : a)) : null;
   // 30 minutes to spare, or 10 when the bag drop at the hotel (itself flexible) comes first
-  const outRun = pickTrainFirst(outRuns, firstAt - (hotelFirst ? 10 : 30), true, lead) || soonest;
+  const outRun = outRuns.find((r) => runKey(r) === chosenRuns?.out)
+    || pickTrainFirst(outRuns, firstAt - (hotelFirst ? 10 : 30), true, lead) || soonest;
   if (outRun) clock = outRun.dep;
   if (!pub && drive) clock = drive.depart;
   items.push({ type: 'start', day, time: clock, name: 'ออกเดินทางจากกรุงเทพฯ',
@@ -244,7 +273,10 @@ export function buildTrip(dest, opts) {
   const toTown = bags ? legMin(getLeg(prev, hotel)) + 10 + legMin(getLeg(hotel, 'ARRIVE')) : legMin(getLeg(prev, 'ARRIVE'));
   const inTown = clock + toTown; // the earliest we can be back at the station / town centre
   const firstBack = pickTrainFirst(backRuns, Math.max(inTown + 10, toMin('13:30')), false);
-  const backRun = station(firstBack) ? pickTrainFirst(backRuns, Math.max(inTown + rideMin + 10, toMin('13:30')), false) : firstBack;
+  // the earliest a run home can leave: a chosen run earlier than this cannot be caught
+  const backEarliest = (r) => Math.max(inTown + 10 + (station(r) ? rideMin : 0), toMin('13:30'));
+  const backRun = backRuns.find((r) => runKey(r) === chosenRuns?.back && r.dep >= backEarliest(r))
+    || (station(firstBack) ? pickTrainFirst(backRuns, Math.max(inTown + rideMin + 10, toMin('13:30')), false) : firstBack);
   if (backRun) clock = Math.max(clock, backRun.dep - 10 - (station(backRun) ? rideMin : 0) - toTown);
   else if (!backRuns.length) clock = Math.max(clock, toMin('14:00') - toTown);
   if (bags) {
@@ -267,5 +299,10 @@ export function buildTrip(dest, opts) {
   items.push({ type: 'end', day: 2, time: clock, name: 'ถึงกรุงเทพฯ จบทริป', sub: 'กลับบ้านพร้อมแบตเต็ม' });
 
   const travelCost = items.filter((i) => i.type === 'leg').reduce((s, l) => s + l.cost, 0);
-  return { dest, transport, date, items, chosen, sun1, sun2, travelCost, hotel: dest.pois[chosen.hotel] };
+  // the runs of this date, for choosing another one (js/rides.js)
+  const runs = pub ? {
+    out: outRuns, back: backRuns.map((r) => ({ ...r, late: r.dep < backEarliest(r) })),
+    outKey: outRun ? runKey(outRun) : null, backKey: backRun ? runKey(backRun) : null,
+  } : null;
+  return { dest, transport, date, items, chosen, sun1, sun2, travelCost, hotel: dest.pois[chosen.hotel], runs };
 }

@@ -68,7 +68,7 @@ def rows():
                            board=STATION_NAME.get(leg["start"], leg["start"]),
                            alight=STATION_NAME.get(leg["dest"], leg["dest"]),
                            depart=t["depart"], arrive=t["arrive"], last="", every_min="",
-                           days=days_of(t["note"]), note=t["note"],
+                           days=days_of(t["note"]), note=t["note"], codes=f"{leg['start']}-{leg['dest']}",
                            source=f"{srt['source']} (ดึงเมื่อ {srt['fetched']})")
     with MANUAL.open(encoding="utf-8") as f:
         yield from csv.DictReader(f)
@@ -117,6 +117,13 @@ def main():
             item = {x: r[x] for x in ("mode", "operator", "board", "alight", "depart", "arrive", "last", "days", "source")}
             item["every"] = int(r["every_min"]) if r["every_min"] else None
             item["checked"] = "railway" if r["mode"] == "train" else "person"
+            item["stations"] = r.get("codes")  # "<board>-<alight>" station codes, for the track on the map
+            # a fare only when the source itself states it (e.g. the railway's note on a train)
+            fare = re.search(r"ค่าโดยสาร\s*([0-9]+\s*บาท(?:\s*,\s*[0-9]+\s*บาท)*(?:\s*ตามระยะทาง)?)", r["note"] or "")
+            item["fare"] = fare.group(1).strip() if fare else None
+            # how to buy: the railway's own booking site for trains; vans by phone (from the source)
+            phone = re.search(r"โทร\s*([0-9][0-9-]{7,})", r["note"] or "")
+            item["phone"] = phone.group(1) if phone else None
             confirmed.setdefault(r["dest"], {"out": [], "back": []})[r["dir"]].append(item)
         else:
             pending[r["dest"]] = pending.get(r["dest"], 0) + 1

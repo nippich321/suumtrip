@@ -5,7 +5,7 @@ import { kindIcon, VEHICLE } from './itinerary.js';
 import { restIcon } from './drive.js';
 
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
-const VEHICLE_COLOR = { walk: '#10a39a', car: '#ff6b4a', grab: '#00b14f', songthaew: '#2e6bd6', van: '#7a5af8' };
+const VEHICLE_COLOR = { walk: '#10a39a', car: '#ff6b4a', grab: '#00b14f', songthaew: '#2e6bd6', van: '#7a5af8', train: '#e07b00', bus: '#c2410c' };
 
 function lineLength(coords) {
   let d = 0;

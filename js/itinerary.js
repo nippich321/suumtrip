@@ -49,6 +49,8 @@ export const VEHICLE = {
   grab: { label: 'Grab', icon: 'ti-car' },
   songthaew: { label: 'สองแถว/วิน', icon: 'ti-bus' },
   van: { label: 'รถตู้', icon: 'ti-bus' },
+  train: { label: 'รถไฟ', icon: 'ti-train' },
+  bus: { label: 'รถทัวร์', icon: 'ti-bus' },
 };
 
 function legCost(vehicle, meters) {
@@ -56,7 +58,7 @@ function legCost(vehicle, meters) {
   if (vehicle === 'walk') return 0;
   if (vehicle === 'grab') return Math.round((40 + km * 9) / 10) * 10;
   if (vehicle === 'songthaew') return Math.round((20 + km * 4) / 10) * 10;
-  if (vehicle === 'van') return Math.round((70 + km * 0.9) / 10) * 10;
+  if (vehicle === 'van' || vehicle === 'bus' || vehicle === 'train') return Math.round((70 + km * 0.9) / 10) * 10;
   return Math.round((km * 3.5) / 10) * 10; // fuel
 }
 
@@ -130,7 +132,8 @@ export function buildTrip(dest, opts) {
   // tag: label/icon for a leg that is not timetabled (the ride to or from a station)
   const pushLeg = (from, to, leg, start, isLong, reverse, run, tag) => {
     if (!leg) return start;
-    const vehicle = legVehicle(leg, transport, isLong);
+    // a timetabled run rides its own kind of vehicle (the 3D map shows a train or a coach)
+    const vehicle = VEHICLE[run?.row.mode] && isLong ? run.row.mode : legVehicle(leg, transport, isLong);
     const slow = isLong && transport !== 'self' ? 1.3 : vehicle === 'walk' ? 1 : 1.15;
     const sec = run?.dur != null ? run.dur * 60 : leg.exact ? leg.sec : leg.sec * slow + (isLong && transport !== 'self' ? 20 * 60 : 0);
     const geom = reverse ? [...leg.geom].reverse() : leg.geom;

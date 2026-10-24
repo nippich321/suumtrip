@@ -6,6 +6,7 @@ import { showLoader } from './loader.js';
 import { mountDatePicker } from './datepicker.js';
 import { mountDrivePlanner, restIcon } from './drive.js';
 import { mountRides } from './rides.js';
+import { mountGiftBox } from './giftbox3d.js';
 
 const app = document.getElementById('app');
 const S = { cat: 'nat', transport: 'pub', date: nextWeekday(), veto: null, dest: null, trip: null, paid: false, reached: 0,
@@ -136,6 +137,7 @@ const screens = {
         </ul>
       </div>
     </section>`;
+    mountGiftBox(app.querySelector('#hero-box'));
   },
 
   choose() {
@@ -305,6 +307,7 @@ const screens = {
       <div id="reveal"></div>
     </section>`;
     const cube = app.querySelector('#the-box .cube');
+    mountGiftBox(app.querySelector('#the-box'));
     app.querySelector('#the-box').onclick = () => {
       if (cube.classList.contains('shake') || cube.classList.contains('open')) return;
       cube.classList.add('shake');

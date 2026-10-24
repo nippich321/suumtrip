@@ -417,3 +417,10 @@ html.ld-lock, html.ld-lock body { overflow: hidden; }
 .rd-ok { color: var(--teal); }
 .rd-buy { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--coral); color: var(--coral-dark); border-radius: 999px; padding: 2px 10px; text-decoration: none; background: var(--card); font-weight: 600; }
 .mapwrap { scroll-margin-top: 64px; }
+
+/* the 3D gift box (js/giftbox3d.js) over the flat stand-in */
+.box3d { position: relative; }
+.box3d .gift3d { position: absolute; left: -45%; top: -30%; width: 190%; height: 145%; pointer-events: none; }
+.hero, .open-stage { overflow-x: clip; }
+.box3d.gl .cube { visibility: hidden; }
+.open-stage h2, .open-stage > p { position: relative; z-index: 1; }

@@ -1,11 +1,12 @@
-// The mystery box in 3D: Kenney's CC0 Holiday Kit present (assets/3d/gifts/), drawn with
+// The mystery box in 3D (assets/3d/gifts/giftbox.glb, modelled in Blender by
+// tools/build_giftbox.py in the site's colours), drawn with
 // three.js over the flat SVG box, which stays as the stand-in until the model has loaded.
 // It follows the SVG's state classes, so js/app.js keeps driving it the same way:
 // .cube = idle (floats and turns), .cube.shake = shaking, .cube.open = the lid pops off.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-const MODEL = 'assets/3d/gifts/present-a-cube.glb';
+const MODEL = 'assets/3d/gifts/giftbox.glb';
 let cached = null; // one download for every box on the site
 
 const easeOutBack = (x) => 1 + 2.70158 * (x - 1) ** 3 + 1.70158 * (x - 1) ** 2;
@@ -57,10 +58,15 @@ export function mountGiftBox(holder) {
     holder.classList.add('gl'); // hide the flat stand-in
   }).catch((err) => { console.warn('3D gift box', err); canvas.remove(); alive = false; });
 
+  let lastW = 0;
+  let lastH = 0;
   function resize() {
-    const w = holder.clientWidth;
-    const h = holder.clientHeight;
-    if (!w || !h) return;
+    // the canvas is drawn larger than the box (room for the lid), so size it by itself
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    if (!w || !h || (w === lastW && h === lastH)) return;
+    lastW = w;
+    lastH = h;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -89,7 +95,7 @@ export function mountGiftBox(holder) {
     if (lid && lidBase) {
       const p = openAt === null ? 0 : easeOutBack(clamp01((t - openAt) / 0.7));
       const bob = openAt === null ? 0 : Math.sin((t - openAt) * 2.2) * 0.03 * clamp01((t - openAt) - 0.7);
-      lid.position.set(lidBase.x - 0.26 * p, lidBase.y + 0.18 * p + bob, lidBase.z + 0.12 * p);
+      lid.position.set(lidBase.x - 0.42 * p, lidBase.y + 0.38 * p + bob, lidBase.z + 0.1 * p);
       lid.rotation.set(0.1 * p, 0.3 * p, 0.6 * p);
     }
     renderer.render(scene, camera);

@@ -41,16 +41,22 @@ ENDPOINTS = [
 ]
 
 
-def query(lat, lon, r):
+PARTS = [
+    'nwr["amenity"~"^(restaurant|cafe)$"]["name"]',
+    'nwr["tourism"~"^(hotel|guest_house|resort|hostel|motel|chalet)$"]["name"]',
+    'nwr["tourism"~"^(attraction|viewpoint|museum|zoo|theme_park)$"]["name"]',
+    'nwr["amenity"~"^(place_of_worship|marketplace)$"]["name"]',
+    'nwr["natural"~"^(beach|waterfall|peak)$"]["name"]',
+    'nwr["leisure"~"^(park|nature_reserve)$"]["name"]',
+]
+
+
+def query(lat, lon, r, parts=PARTS):
     a = f"(around:{r},{lat},{lon})"
+    body = "\n".join(f"  {p}{a};" for p in parts)
     return f"""[out:json][timeout:90];
 (
-  nwr["amenity"~"^(restaurant|cafe)$"]["name"]{a};
-  nwr["tourism"~"^(hotel|guest_house|resort|hostel|motel|chalet)$"]["name"]{a};
-  nwr["tourism"~"^(attraction|viewpoint|museum|zoo|theme_park)$"]["name"]{a};
-  nwr["amenity"~"^(place_of_worship|marketplace)$"]["name"]{a};
-  nwr["natural"~"^(beach|waterfall|peak)$"]["name"]{a};
-  nwr["leisure"~"^(park|nature_reserve)$"]["name"]{a};
+{body}
 );
 out center tags;"""
 
@@ -81,7 +87,17 @@ def main():
             continue
         lat, lon, r = DESTS[dest]
         print(f"{dest}: fetching", flush=True)
-        data = fetch(query(lat, lon, r))
+        try:
+            data = fetch(query(lat, lon, r))
+        except SystemExit:
+            # a busy server answers small queries more often: one kind of place at a time
+            print(f"{dest}: trying one kind of place at a time", flush=True)
+            elements = {}
+            for part in PARTS:
+                for el in fetch(query(lat, lon, r, [part]))["elements"]:
+                    elements[(el["type"], el["id"])] = el
+                time.sleep(3)
+            data = {"elements": list(elements.values())}
         out.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
         print(f"{dest}: {len(data.get('elements', []))} elements", flush=True)
         time.sleep(5)
